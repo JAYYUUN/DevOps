@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: logstash-agent
+  namespace: logging
+spec:
+  selector:
+    matchLabels:
+      app: logstash-agent
+  template:
+    metadata:
+      labels:
+        app: logstash-agent
+    spec:
+      terminationGracePeriodSeconds: 120
+      containers:
+        - name: logstash
+          image: docker.elastic.co/logstash/logstash:8.17.0
+          imagePullPolicy: IfNotPresent
+          command: ["/usr/share/logstash/bin/logstash"]
+          args:
+            - "-f"
+            - "/usr/share/logstash/pipeline"
+            - "-w"
+            - "1"
+            - "--queue.type"
+            - "persisted"
+            - "--path.queue"
+            - "/usr/share/logstash/data/queue"
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: NHN_LNC_APPKEY
+              valueFrom:
+                secretKeyRef:
+                  name: nhn-logncrash
+                  key: appkey
+            - name: LS_JAVA_OPTS
+              value: "-Xms512m -Xmx512m"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          volumeMounts:
+            - name: host-logs
+              mountPath: /host/var/log
+              readOnly: true
+            - name: pipeline
+              mountPath: /usr/share/logstash/pipeline
+              readOnly: true
+            - name: logstash-data
+              mountPath: /usr/share/logstash/data
+      volumes:
+        - name: host-logs
+          hostPath:
+            path: /var/log
+            type: Directory
+        - name: logstash-data
+          hostPath:
+            path: /var/lib/logstash-agent
+            type: DirectoryOrCreate
+        - name: pipeline
+          projected:
+            sources:
+              - configMap:
+                  name: logstash-container-input
+              - configMap:
+                  name: logstash-system-input
+              - configMap:
+                  name: logstash-auditd-input
+              - configMap:
+                  name: logstash-container-filter
+              - configMap:
+                  name: logstash-system-filter
+              - configMap:
+                  name: logstash-auditd-filter
+              - configMap:
+                  name: logstash-common-filter
+              - configMap:
+                  name: logstash-nhn-output

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-container-input
+  namespace: logging
+data:
+  10-container-input.conf: |
+    input {
+      file {
+        id => "container-cri"
+        path => ["/host/var/log/pods/*/*/*.log"]
+        start_position => "beginning"
+        sincedb_path => "/usr/share/logstash/data/sincedb/container"
+        add_field => { "[@metadata][log_kind]" => "container" }
+      }
+    }

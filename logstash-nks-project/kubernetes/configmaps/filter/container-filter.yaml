@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-container-filter
+  namespace: logging
+data:
+  40-container-filter.conf: |
+    filter {
+      if [@metadata][log_kind] == "container" {
+        mutate {
+          add_field => { "logSource" => "kubernetes" "logType" => "container" }
+        }
+
+        # CRI: 2026-10-17T10:30:00.123Z stdout F actual message
+        dissect {
+          mapping => { "message" => "%{criTime} %{stream} %{[@metadata][criFlag]} %{body}" }
+          tag_on_failure => ["_cri_parse_failure"]
+        }
+        if "_cri_parse_failure" not in [tags] {
+          date {
+            match => ["criTime", "ISO8601"]
+            target => "@timestamp"
+            tag_on_failure => ["_cri_date_failure"]
+          }
+        } else {
+          mutate { copy => { "message" => "body" } }
+        }
+
+        # /host/var/log/pods/<namespace>_<pod>_<uid>/<container>/0.log
+        grok {
+          match => {
+            "path" => "^/host/var/log/pods/(?<namespace>[^/]+)_(?<fullPodName>[^/]+)_[0-9a-fA-F-]{36}/[^/]+/[^/]+\.log$"
+          }
+          tag_on_failure => ["_pod_path_parse_failure"]
+        }
+
+        # Deployment Pod suffix (replicaset-hash + random 5 chars)만 제거.
+        # 그 외 StatefulSet/Job/직접 생성 Pod는 원래 이름 유지.
+        ruby {
+          code => '
+            name = event.get("fullPodName")
+            if name
+              workload = name.sub(/-[a-z0-9]{8,10}-[a-z0-9]{5}\z/, "")
+              event.set("podName", workload)
+              event.set("logSource", workload)
+            end
+          '
+        }
+
+        # 일반적인 Nginx combined access log 예시.
+        # Tomcat AccessLogValve 포맷이 다르면 별도 패턴 추가 필요.
+        if [body] {
+          grok {
+            match => {
+              "body" => '^%{IPORHOST:clientIp} %{NOTSPACE:[@metadata][ident]} %{NOTSPACE:[@metadata][auth]} \[%{HTTPDATE:[@metadata][httpDate]}\] "%{WORD:httpMethod} %{NOTSPACE:requestPath} HTTP/%{NUMBER:[@metadata][httpVersion]}" %{NUMBER:statusCode:int} (?:%{NUMBER:[@metadata][bytes]}|-)(?: .*)?$'
+            }
+            tag_on_failure => []
+            add_field => { "[@metadata][httpAccess]" => "true" }
+          }
+          if [@metadata][httpAccess] == "true" {
+            mutate { replace => { "logType" => "access" } }
+          }
+        }
+
+        mutate { remove_field => ["message", "criTime", "fullPodName", "path", "host"] }
+      }
+    }
