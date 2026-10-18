@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-auditd-filter
+  namespace: logging
+data:
+  60-auditd-filter.conf: |
+    filter {
+      if [@metadata][log_kind] == "auditd" {
+        mutate {
+          copy => { "message" => "body" }
+          add_field => { "logSource" => "linux" "logType" => "audit" }
+        }
+
+        grok {
+          match => {
+            "body" => "type=%{WORD:auditType} msg=audit\(%{NUMBER:[@metadata][auditEpoch]}:%{NUMBER:auditId}\):"
+          }
+          tag_on_failure => []
+        }
+        # auditd의 SYSCALL 등에서 보이는 필드만 추출
+        grok {
+          match => {
+            "body" => "(?:^|\s)uid=%{NUMBER:userId:int}(?:\s|$)"
+          }
+          tag_on_failure => []
+        }
+        grok {
+          match => {
+            "body" => "(?:^|\s)auid=%{NUMBER:auditUserId:int}(?:\s|$)"
+          }
+          tag_on_failure => []
+        }
+        grok {
+          match => { "body" => "(?:^|\s)comm=\"%{DATA:processName}\"" }
+          tag_on_failure => []
+        }
+        grok {
+          match => { "body" => "(?:^|\s)exe=\"%{DATA:command}\"" }
+          tag_on_failure => []
+        }
+        if [body] =~ /(?:^|\s)success=yes(?:\s|$)/ {
+          mutate { add_field => { "eventOutcome" => "success" } }
+        } else if [body] =~ /(?:^|\s)success=no(?:\s|$)/ {
+          mutate { add_field => { "eventOutcome" => "failure" } }
+        }
+
+        mutate { remove_field => ["message", "path", "host", "[log][file][path]"] }
+      }
+    }
