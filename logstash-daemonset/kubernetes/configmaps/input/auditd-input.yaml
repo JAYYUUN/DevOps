@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-auditd-input
+  namespace: logging
+data:
+  30-auditd-input.conf: |
+    input {
+      file {
+        id => "auditd"
+        path => ["/host/var/log/audit/audit.log"]
+        start_position => "beginning"
+        sincedb_path => "/usr/share/logstash/data/sincedb/auditd"
+        add_field => { "[@metadata][log_kind]" => "auditd" }
+      }
+    }

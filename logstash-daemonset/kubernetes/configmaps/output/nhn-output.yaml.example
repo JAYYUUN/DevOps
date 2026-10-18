@@ -1,0 +1,32 @@
+# NHN Cloud Log & Crash Search 전송용 선택 설정.
+# 사용 시 이 파일을 nhn-output.yaml로 복사하고, 아래 Pipeline 설정의 주석을 해제한다.
+# stdout-output과 동시에 활성화하지 않는 것을 권장한다.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-nhn-output
+  namespace: logging
+data:
+  90-nhn-output.conf: |
+    # filter {
+    #   mutate {
+    #     add_field => {
+    #       "projectName" => "${NHN_LNC_APPKEY}"
+    #       "projectVersion" => "1.0.0"
+    #       "logVersion" => "v2"
+    #     }
+    #   }
+    # }
+    # output {
+    #   http {
+    #     id => "nhn-logncrash"
+    #     url => "https://api-logncrash.gov-nhncloudservice.com/v2/log"
+    #     http_method => "post"
+    #     format => "json"
+    #     content_type => "application/json"
+    #     automatic_retries => 1
+    #     retry_non_idempotent => true
+    #     request_timeout => 60
+    #     socket_timeout => 30
+    #   }
+    # }

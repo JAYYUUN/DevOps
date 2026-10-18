@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-stdout-output
+  namespace: logging
+data:
+  90-stdout-output.conf: |
+    output {
+      stdout {
+        codec => rubydebug
+      }
+    }

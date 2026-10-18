@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-common-filter
+  namespace: logging
+data:
+  70-common-filter.conf: |
+    filter {
+      # 파싱에 실패해도 원본 메시지를 보존한다.
+      if ![body] and [message] {
+        mutate { copy => { "message" => "body" } }
+      }
+      if [@metadata][log_kind] == "container" and [hostname] {
+        # 컨테이너 필터에서 추출한 실제 Pod 이름을 유지한다.
+      } else {
+        mutate { replace => { "hostname" => "${NODE_NAME}" } }
+      }
+      mutate {
+        add_field => {
+          "timestamp" => "%{@timestamp}"
+        }
+        remove_field => ["message", "path", "host", "sourceHost", "@version", "[log][file][path]"]
+      }
+    }
