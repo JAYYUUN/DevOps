@@ -4,6 +4,6 @@
 
 ## 목차
 
-| 프로젝트 | 설명 |
+| 작업물 | 설명 |
 |---|---|
 | [Logstash DaemonSet](./logstash-daemonset/README.md) | Kubernetes의 각 Worker Node에서 컨테이너 및 시스템 로그를 수집하고 외부 로그 관리 서비스로 전송하는 Logstash DaemonSet 구성 |
