@@ -2,6 +2,8 @@
 
 클라우드 및 Kubernetes 환경에서 발생한 장애와 오류에 대해 문제 상황, 원인 분석, 해결 과정 및 검증 결과를 정리한다.
 
+자료 참고 : https://prepare.sh/interview-questions/devops
+
 ## 목차
 
 | 작업 | 설명 |
