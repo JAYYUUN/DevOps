@@ -6,4 +6,4 @@
 
 | 작업물 | 설명 |
 |---|---|
-| [NHN Cloud 공공 RDS for MariaDB 최신 백업 내보내기](./nhn-mariadb-backup-export/README.md) | RDS 자동 백업 중 완료된 최신 FULL 백업 1개를 Object Storage로 내보내는 구성. RDS 자동 백업은 사전 설정이 필요하다. |
+| [NHN Cloud 공공 RDS for MariaDB 최신 백업 내보내기](./nhn-mariadb-backup-export/README.md) | RDS 자동 백업 중 완료된 최신 FULL 백업 1개를 자동으로 Object Storage로 내보내는 구성. RDS 자동 백업은 사전 설정이 필요하다. |
