@@ -29,7 +29,7 @@ RDS 로그 목록 조회와 내보내기 API를 호출할 때는 RDS Appkey와 �
 대상 Object Storage 컨테이너는 미리 생성해 둔다. 수집하려는 로그가 RDS에서 생성되고 있어야 한다.
 
 ```bash
-cp .env.example .env
+cp env.example .env
 chmod 600 .env
 vi .env
 ```
