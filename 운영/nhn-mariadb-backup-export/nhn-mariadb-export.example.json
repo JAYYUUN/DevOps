@@ -1,0 +1,11 @@
+{
+  "user_access_key_id": "USER_ACCESS_KEY_ID",
+  "secret_access_key": "SECRET_ACCESS_KEY",
+  "rds_appkey": "RDS_APPKEY",
+  "db_instance_id": "DB_INSTANCE_UUID",
+  "storage_tenant_id": "OBJECT_STORAGE_TENANT_ID",
+  "storage_username": "OBJECT_STORAGE_ACCOUNT_ID",
+  "storage_api_password": "OBJECT_STORAGE_API_PASSWORD",
+  "storage_container": "BACKUP_CONTAINER_NAME",
+  "storage_prefix": "mariadb-rds"
+}
