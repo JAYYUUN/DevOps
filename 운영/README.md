@@ -6,5 +6,5 @@
 
 | 작업물 | 설명 |
 |---|---|
-| [NHN Cloud 공공 RDS for MariaDB 최신 백업 내보내기](./nhn-mariadb-backup-export/README.md) | RDS 자동 백업 중 완료된 최신 FULL 백업 1개를 자동으로 Object Storage로 내보내는 구성. 실행 시 인증 토큰을 자동 발급받으며 cron으로 정기 실행한다. (RDS 자동 백업은 사전 설정이 필요하다.) |
+| [NHN Cloud 공공 RDS for MariaDB 최신 백업 내보내기](./nhn-mariadb-backup-export/README.md) | RDS MariaDB 자동 백업 중 완료된 최신 FULL 백업 1개를 자동으로 Object Storage로 내보내는 구성. 실행 시 인증 토큰을 자동 발급받으며 cron으로 정기 실행한다. (RDS 자동 백업은 사전 설정이 필요하다.) |
 | [NHN Cloud 공공 RDS for MariaDB 로그 백업](./nhn-mariadb-log-backup-export/README.md) | RDS MariaDB의 Error, General, Audit, Binary Log를 API로 조회하고 Object Storage로 내보내는 구성. 실행 시 인증 토큰을 자동 발급받으며 cron으로 정기 실행한다. |
