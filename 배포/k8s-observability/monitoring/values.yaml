@@ -1,0 +1,3 @@
+# Official kube-prometheus-stack 92.11.0 overrides.
+# Empty on purpose: upstream defaults were used for the verified monitoring release.
+{}
