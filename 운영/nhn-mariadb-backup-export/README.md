@@ -57,6 +57,26 @@ mkdir -p /home/ubuntu/nhn-mariadb-backup-export/logs
 crontab -e
 ```
 
+### cron 실행 로그 저장 경로
+
+cron 실행 결과와 오류 메시지를 저장하려면 로그 디렉터리를 미리 생성해야 한다.
+
+로그 디렉터리 경로는 다음과 같다.
+
+```text
+/home/ubuntu/nhn-mariadb-backup-export/logs
+```
+
+로그 파일은 다음 경로에 저장된다.
+
+```text
+/home/ubuntu/nhn-mariadb-backup-export/logs/nhn-mariadb-export.log
+```
+
+cron 명령어의 `>>`는 실행 결과를 로그 파일에 추가하고, `2>&1`은 오류 메시지도 동일한 로그 파일에 저장한다.
+
+로그 파일이 없어도 cron 실행 시 자동 생성되지만, 상위 `logs` 디렉터리가 존재하지 않으면 로그 파일을 생성할 수 없어 Python 스크립트가 실행되지 않을 수 있다.
+
 매일 06:00에 실행하려면 아래 한 줄을 등록한다. 시간은 서버의 cron 시간대 기준이며, RDS 자동 백업이 완료된 이후로 잡는다. Python 경로는 위에서 확인한 값에 맞춘다.
 
 ```cron
