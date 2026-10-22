@@ -251,6 +251,8 @@ kubectl get pv -o wide
 kubectl get pvc -n observability
 ```
 
+vi loki/values/00-common.yaml
+
 설정 파일에서 수정할 부분:
 
 ```yaml
