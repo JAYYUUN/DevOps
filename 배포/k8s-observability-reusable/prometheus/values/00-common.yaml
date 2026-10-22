@@ -1,2 +1,0 @@
-# kube-prometheus-stack 기본값을 유지합니다.
-# 실제 클러스터의 Helm override를 추출하여 필요 시 추가하세요.
