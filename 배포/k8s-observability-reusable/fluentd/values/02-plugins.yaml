@@ -1,0 +1,4 @@
+plugins:
+  - fluent-plugin-grafana-loki
+  - fluent-plugin-prometheus
+  - fluent-plugin-kubernetes_metadata_filter
