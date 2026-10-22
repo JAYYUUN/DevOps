@@ -1,0 +1,3 @@
+loki:
+  limits_config:
+    allow_structured_metadata: true
