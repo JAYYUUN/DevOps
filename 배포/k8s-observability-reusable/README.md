@@ -111,16 +111,6 @@ singleBinary:
 
 예를 들어 기본 StorageClass가 없는 환경에서 조회한 이름이 `block-static-v2-sc`라면, **해당 환경에서만** `storageClass: block-static-v2-sc`로 변경합니다. 이는 예시이며 기본 설정에 고정하지 않습니다. 정적 프로비저닝 방식이면 사용할 수 있는 PV도 미리 준비해야 할 수 있습니다.
 
-**③ Loki 설치 후 PVC 바인딩 확인**
-
-```bash
-bash scripts/install-module.sh loki
-kubectl get pvc,pods -n observability
-kubectl describe pvc storage-loki-0 -n observability
-```
-
-PVC가 `Pending`이면 StorageClass 이름, 기본 StorageClass 지정 여부, PV 존재 여부 및 PVC 이벤트를 확인하세요. **[Loki 상세 설정 및 장애 점검 가이드](loki/README.md)**에 추가 설명이 있습니다.
-
 ## 3. 설치 전 준비: 실제 명령어
 
 ### 3.1 kubectl / Helm / Python 확인
