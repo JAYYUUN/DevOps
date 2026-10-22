@@ -145,7 +145,6 @@ chmod 700 get_helm.sh
 Namespace는 Kubernetes 리소스를 논리적으로 구분하는 공간입니다. 세 모듈의 기본 설치 대상인 `observability`를 미리 생성하면 Pod와 Service를 같은 공간에서 관리할 수 있습니다. `--dry-run=client -o yaml | kubectl apply -f -`는 이미 Namespace가 있어도 적용할 수 있는 방식입니다.
 
 ```bash
-unzip k8s-observability-reusable.zip
 cd k8s-observability-reusable
 kubectl create namespace observability --dry-run=client -o yaml | kubectl apply -f -
 kubectl get ns observability
