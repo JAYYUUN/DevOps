@@ -305,63 +305,236 @@ helm upgrade --install fluentd fluent/fluentd \
   -f .generated/fluentd-pipeline.yaml
 ```
 
-## 5. Prometheus/Loki 추가 설정 파일 관리
+## 5. Prometheus / Loki 추가 설정 파일 관리
 
-모든 모듈에 설정 파일을 추가할 수 있지만, 도구마다 설정 방식이 다릅니다. Prometheus의 수집 대상과 알림 규칙은 별도 Kubernetes 리소스로 관리할 수 있고, Loki 서버 동작 설정은 주로 Helm values로 관리합니다. 따라서 Fluentd처럼 모든 설정을 `.conf`로 분리하지는 않습니다.
+Prometheus와 Loki는 필요한 기능에 따라 설정 파일을 추가하거나 기존 설정을 변경할 수 있습니다.
 
-**Prometheus와 Loki에도 설정 파일을 추가할 수 있습니다.** 다만 Fluentd와 달리 일반 `.conf` 파일을 단순 연결하는 방식은 아닙니다.
+두 모듈 모두 YAML 파일을 사용하지만, **Prometheus는 설정 종류에 따라 적용 방법이 다르고, Loki는 주로 Helm values를 통해 설정합니다.**
 
-- **Prometheus Stack**: Prometheus의 수집 대상은 `ServiceMonitor`, `PodMonitor`, `Probe`, `ScrapeConfig` 같은 Kubernetes CRD 리소스로 추가할 수 있습니다. 알림 규칙은 `PrometheusRule` 리소스를 사용합니다. Helm values에 `additionalScrapeConfigs`를 설정하는 방법도 있지만 차트 및 Operator 지원 형식에 맞춰야 합니다.
-- **Loki**: Loki의 주요 설정은 `loki/values/*.yaml`에서 Helm 차트가 지원하는 `loki.*` 값으로 관리합니다. 별도 설정을 추가할 때는 해당 차트 버전의 values 스키마를 확인하고 `04-*.yaml`처럼 추가합니다.
+### 5.1. Prometheus에서 변경할 수 있는 기능
 
-Prometheus CRD를 별도 관리하려면 `prometheus/manifests/` 폴더를 추가해 다음처럼 적용할 수 있습니다. 이 예시는 **파일을 둘 위치와 적용 방법**을 보여주며, 실제 CRD 매니페스트는 수집 대상에 맞게 작성해야 합니다.
+| 기능 | 설명 | 설정 방식 |
+|---|---|---|
+| 메트릭 수집 대상 | 새로운 애플리케이션이나 서비스의 메트릭을 수집 | ServiceMonitor, PodMonitor |
+| 알림 규칙 | CPU 사용량 초과, Pod 재시작 등 특정 조건 감지 | PrometheusRule |
+| 메트릭 수집 주기 | 몇 초마다 메트릭을 수집할지 설정 | Helm values |
+| 데이터 보존 기간 | 수집한 메트릭을 며칠 동안 저장할지 설정 | Helm values |
+| Alertmanager | 발생한 알림을 이메일, Webhook 등으로 전달 | Helm values |
+| Grafana | 대시보드, 데이터소스 및 Grafana 서버 설정 변경 | Helm values |
+
+**① 메트릭 수집 대상이나 알림 규칙 추가**
+
+이 기능들은 Kubernetes 리소스로 관리합니다.
+
+```text
+prometheus/
+└── manifests/
+    ├── 01-servicemonitor.yaml
+    └── 02-prometheusrule.yaml
+```
+
+설정 파일을 생성한 후 다음 명령으로 Kubernetes에 등록합니다.
 
 ```bash
 kubectl apply -n observability -f prometheus/manifests/
 ```
 
-예를 들어 Loki limits를 바꾸려면 `loki/values/03-limits.yaml`을 수정하고 **Loki 모듈만** 다시 설치합니다.
+등록된 ServiceMonitor나 PrometheusRule은 Prometheus Operator가 선택하여 적용합니다.
+
+단, **파일을 등록하는 것만으로 연결이 완료되는 것은 아닙니다.**
+
+- ServiceMonitor: 모니터링할 Service의 라벨과 포트 이름을 일치시켜야 합니다.
+- PrometheusRule: Prometheus Operator가 선택할 수 있도록 라벨 조건을 맞춰야 합니다.
+
+**② Prometheus 서버 설정 변경**
+
+수집 주기나 데이터 보존 기간처럼 Prometheus 자체의 동작을 변경하려면 Helm values 파일을 사용합니다.
+
+예를 들어 새 파일을 생성합니다.
+
+```text
+prometheus/values/04-custom.yaml
+```
+
+파일에 필요한 Helm 설정을 작성한 후 다음 명령으로 적용합니다.
+
+```bash
+bash scripts/install-module.sh prometheus
+```
+
+설치 스크립트가 번호가 붙은 values 파일을 읽어 Helm에 전달하므로 별도로 파일 경로를 등록할 필요가 없습니다.
+
+### 5.2. Loki에서 변경할 수 있는 기능
+
+| 기능 | 설명 | 설정 파일 |
+|---|---|---|
+| 로그 저장소 | 로그를 저장할 S3 버킷 및 연결 정보 | `01-storage.yaml` |
+| 로그 보존 기간 | 로그를 며칠 동안 보관할지 설정 | `03-limits.yaml` 등 |
+| 로그 수집 제한 | 초당 로그 수집량 및 처리량 제한 | `03-limits.yaml` |
+| 로그 조회 제한 | 로그 검색 범위 및 처리 제한 | `03-limits.yaml` |
+| 캐시 | 로그 조회 성능을 위한 캐시 설정 | `02-cache.yaml` |
+| 서버 리소스 | Loki의 CPU, 메모리, PVC 등 설정 | `00-common.yaml` 등 |
+
+**Loki 설정 추가 방법**
+
+기존 파일에 해당 기능이 있다면 그 파일을 수정하면 됩니다.
+
+새로운 설정을 별도로 관리하고 싶다면 다음과 같이 파일을 생성합니다.
+
+```text
+loki/
+└── values/
+    ├── 00-common.yaml
+    ├── 01-storage.yaml
+    ├── 02-cache.yaml
+    ├── 03-limits.yaml
+    ├── 04-custom.yaml       # 새로 추가한 설정
+    └── 99-private.yaml
+```
+
+`04-custom.yaml`에 Loki Helm 차트가 지원하는 설정을 작성한 후 다음 명령으로 적용합니다.
 
 ```bash
 bash scripts/install-module.sh loki
 ```
 
-## 6. Grafana / Loki 확인
+설치 스크립트가 새 values 파일을 Helm에 전달하므로 별도로 연결 설정을 추가할 필요가 없습니다.
 
-Grafana는 메트릭과 로그를 시각적으로 조회하는 화면이고, Loki Gateway는 로그 검색 API에 접근하는 진입점입니다. `kubectl port-forward`는 Kubernetes Service의 포트를 관리 서버로 전달하며, SSH 터널은 작업 PC에서 Bastion의 포워딩 포트에 안전하게 접근하도록 연결합니다.
+단, Loki 설정은 **사용 중인 Helm 차트 버전에서 지원하는 설정 키**를 사용해야 합니다.
 
-Grafana 포트포워딩(Bastion):
+### 5.3. 설정 파일 연결 방식 요약
+
+| 구분 | 파일을 만드는 위치 | 적용 방법 |
+|---|---|---|
+| Prometheus 수집 대상 및 알림 규칙 | `prometheus/manifests/` | `kubectl apply` |
+| Prometheus 서버 설정 | `prometheus/values/` | `install-module.sh prometheus` |
+| Loki 서버 설정 | `loki/values/` | `install-module.sh loki` |
+
+**핵심은 다음과 같습니다.**
+
+- `values/`에 추가한 `NN-*.yaml` 파일은 설치 스크립트가 자동으로 Helm에 연결합니다.
+- `manifests/`에 추가한 Kubernetes 리소스는 `kubectl apply`로 직접 등록해야 합니다.
+- 동일한 Helm 설정이 여러 파일에 존재하면 나중에 읽힌 파일의 값이 우선 적용됩니다.
+- S3 인증 정보 등 민감한 값은 기존 `99-private.yaml`에서 관리하고 GitHub에 업로드하지 않습니다.
+
+
+## 6. Grafana 접속 및 모니터링 구성 검증
+
+Grafana에 Prometheus와 Loki 데이터소스가 연결되어 있으면 메트릭과 로그를 Grafana에서 확인할 수 있습니다. Fluentd는 Loki로 로그를 전달하므로, 테스트 로그를 생성한 후 Grafana에서 조회하여 전달 경로를 검증합니다.
+
+### 6.1. Grafana 접속
+
+**① Bastion에서 포트포워딩**
 
 ```bash
 kubectl port-forward -n observability svc/monitoring-grafana 3000:80
 ```
 
-작업 PC가 Bastion으로 SSH 접속 가능한 경우, 별도 터미널에서 기존 SSH 접속 포트를 사용해 로컬 터널을 생성합니다.
+포트포워딩 명령은 실행한 상태로 유지합니다.
+
+**② 작업 PC에서 SSH 터널 생성**
 
 ```bash
-ssh -p <SSH_PORT> -L 3000:127.0.0.1:3000 ubuntu@<BASTION_IP>
+ssh -i <KEY_FILE> -p <SSH_PORT> \
+  -L 3000:127.0.0.1:3000 \
+  ubuntu@<BASTION_IP>
 ```
 
-브라우저에서 `http://localhost:3000` 접속 후 **Explore → Loki**에서 아래 쿼리를 실행합니다.
+SSH 키를 사용하지 않는 환경에서는 `-i <KEY_FILE>`을 생략합니다. 작업 PC의 로컬 포트 `3000`이 이미 사용 중이라면 다른 포트로 변경합니다.
+
+**③ 관리자 계정 및 초기 비밀번호 확인 (Bastion)**
+
+```bash
+kubectl get secret monitoring-grafana \
+  -n observability \
+  -o jsonpath='{.data.admin-user}' | base64 -d
+echo
+
+kubectl get secret monitoring-grafana \
+  -n observability \
+  -o jsonpath='{.data.admin-password}' | base64 -d
+echo
+```
+
+설치 후 Grafana에서 비밀번호를 변경했다면 변경된 비밀번호로 로그인합니다.
+
+**④ 브라우저 접속**
+
+작업 PC에서 `http://localhost:3000`에 접속해 로그인합니다.
+
+### 6.2. Prometheus 검증
+
+1. Grafana의 **Connections → Data sources**에서 Prometheus 데이터소스를 확인합니다.
+2. **Explore**에서 Prometheus를 선택하고 다음 PromQL을 실행합니다.
+
+```promql
+up
+```
+
+`up=1`은 해당 수집 대상에 대한 스크레이프 성공, `up=0`은 실패를 뜻합니다.
+
+### 6.3. Loki 검증
+
+1. **Connections → Data sources**에서 Loki 데이터소스를 확인합니다.
+2. 데이터소스가 없다면 **Add data source → Loki**에서 다음 URL을 입력하고 **Save & test**를 실행합니다.
+
+```text
+http://loki-gateway.observability.svc.cluster.local
+```
+
+3. **Explore**에서 Loki를 선택하고 다음 LogQL을 실행합니다.
 
 ```logql
 {namespace="observability"}
 ```
 
-Loki API를 직접 확인하려면 Bastion에서:
+해당 라벨을 가진 로그가 수집된 상태라면 로그가 표시됩니다. 로그가 없다면 시간 범위와 실제 Loki 라벨을 확인합니다.
+
+### 6.4. Fluentd → Loki 로그 전달 검증
+
+**① 테스트 로그 발생 (Bastion)**
 
 ```bash
-kubectl port-forward -n observability svc/loki-gateway 3100:80
+kubectl run fluentd-log-test \
+  -n observability \
+  --image=busybox:1.36 \
+  --restart=Never \
+  -- sh -c 'echo "FLUENTD_LOKI_TEST_12345"; sleep 300'
 ```
 
-다른 터미널에서:
+테스트 로그가 생성되었는지 확인합니다.
 
 ```bash
-curl -sG 'http://localhost:3100/loki/api/v1/query_range' \
-  --data-urlencode 'query={namespace="observability"}' \
-  --data-urlencode 'since=10m' \
-  --data-urlencode 'limit=5'
+kubectl logs -n observability fluentd-log-test
 ```
+
+**② Grafana에서 로그 검색**
+
+**Explore → Loki**에서 시간 범위를 **Last 15 minutes**로 설정하고 다음 LogQL을 실행합니다.
+
+```logql
+{namespace="observability"} |= "FLUENTD_LOKI_TEST_12345"
+```
+
+테스트 메시지가 표시되면 **Pod 로그 → Fluentd → Loki → Grafana** 전달 경로가 정상 동작하는 것입니다. 단, 이 쿼리는 Fluentd가 컨테이너 로그를 수집하고 `namespace` 라벨을 Loki로 전달하는 설정을 전제로 합니다.
+
+**③ 테스트 Pod 삭제 (Bastion)**
+
+```bash
+kubectl delete pod fluentd-log-test -n observability
+```
+
+### 6.5. 최종 검증 기준
+
+| 구성요소 | 확인 방법 | 정상 기준 |
+|---|---|---|
+| Grafana | 브라우저 로그인 | 정상 접속 |
+| Prometheus | Explore에서 `up` 실행 | 수집 대상 `up=1` |
+| Loki | Explore에서 LogQL 실행 | 로그 조회 가능 |
+| Fluentd | 테스트 로그를 Loki에서 검색 | 테스트 메시지 조회 성공 |
+
+이후 메트릭과 로그는 Grafana의 **Explore** 및 **Dashboards**에서 조회합니다. Pod 장애나 수집 오류가 의심될 때는 `kubectl logs`, `kubectl describe`로 추가 점검합니다.
+
 
 ## 7. 변경·업데이트 방법
 
