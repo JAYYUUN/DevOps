@@ -55,14 +55,23 @@ cat README.md
 
 저장소에 여러 운영 모듈이 들어 있다면 `sparse-checkout`을 사용해 필요한 폴더만 작업 디렉터리에 표시할 수 있습니다. 아래 명령은 **4번 전체 clone 대신** 선택해서 사용하는 방법입니다. 원격 저장소의 모듈 경로가 다르면 `git sparse-checkout set`의 인자를 변경하세요.
 
-```bash
+# 1. ~/git 폴더를 만들고 이동
+mkdir -p ~/git
 cd ~/git
-git clone --filter=blob:none --sparse https://github.com/JAYYUUN/DevOps.git DevOps-sparse
-cd DevOps-sparse
-git sparse-checkout set k8s-observability-reusable
-ls -la k8s-observability-reusable
-```
 
+# 2. DevOps-sparse 폴더에 Git 관리 정보와 저장소 루트 파일을 내려받음
+#    k8s-observability-reusable 폴더의 파일은 아직 내려받지 않음
+git clone --filter=blob:none --sparse https://github.com/JAYYUUN/DevOps.git DevOps-sparse
+
+# 3. 생성된 DevOps-sparse 폴더로 이동
+cd DevOps-sparse
+
+# 4. k8s-observability-reusable 폴더와 그 안의 파일을 내려받음
+git sparse-checkout set k8s-observability-reusable
+
+# 5. 내려받은 폴더로 이동하여 파일 목록 확인
+cd k8s-observability-reusable
+ls -la
 서버의 Git 버전이나 원격 서버의 부분 다운로드 지원 여부에 따라 `--filter`가 지원되지 않을 수 있습니다. 그 경우 `--filter=blob:none` 옵션만 빼고 실행하면 됩니다.
 
 ## 6. GitHub 변경사항 가져오기
