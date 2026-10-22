@@ -1,0 +1,48 @@
+deploymentMode: SingleBinary
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  schemaConfig:
+    configs:
+      - from: "2024-04-01"
+        store: tsdb
+        object_store: s3
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+singleBinary:
+  replicas: 1
+  persistence:
+    enabled: true
+    # Loki WAL 및 로컬 작업 데이터를 재시작 후에도 유지하기 위한 PVC
+    # 설치 전 kubectl get storageclass 로 확인한 이름을 입력하세요.
+    # 빈 값은 기본 StorageClass 사용을 의미하며, 기본값이 없으면 PVC가 Pending일 수 있습니다.
+    storageClass: ""
+    size: 10Gi
+  # Cinder CSI PVC에서 /var/loki 디렉터리 쓰기 권한이 없을 때 초기 권한 보정
+  # Loki 프로세스는 기존 비-root 사용자(UID 10001)로 실행
+  initContainers:
+    - name: fix-loki-volume-permissions
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          chown -R 10001:10001 /var/loki
+          chmod -R u+rwX,g+rwX /var/loki
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+      volumeMounts:
+        - name: storage
+          mountPath: /var/loki
+read:
+  replicas: 0
+write:
+  replicas: 0
+backend:
+  replicas: 0
+minio:
+  enabled: false

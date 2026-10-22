@@ -1,0 +1,8 @@
+grafana:
+  enabled: true
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki-gateway.observability.svc.cluster.local
+      isDefault: false
