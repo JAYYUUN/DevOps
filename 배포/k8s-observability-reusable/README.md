@@ -9,7 +9,7 @@ Kubernetes에서 필요한 관측 도구를 **차트별로 독립 설치·수정
 | 모듈 | 역할 | Helm 차트 | 릴리스 이름 |
 |---|---|---|---|
 | Prometheus Stack | 메트릭 수집, Grafana, Alertmanager | `prometheus-community/kube-prometheus-stack` | `monitoring` |
-| Loki | 로그 저장·검색, NHN Cloud S3 호환 Object Storage | `grafana/loki` | `loki` |
+| Loki | 로그 저장·검색, S3 호환 Object Storage | `grafana/loki` | `loki` |
 | Fluentd | 노드별 CRI 컨테이너 로그 수집 및 Loki 전송 | `fluent/fluentd` | `fluentd` |
 
 ```text
