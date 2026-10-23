@@ -1,0 +1,5 @@
+loki:
+  chunksCache:
+    enabled: false
+  resultsCache:
+    enabled: false
