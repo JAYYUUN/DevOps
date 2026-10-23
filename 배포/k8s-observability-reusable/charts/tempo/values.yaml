@@ -1,5 +1,6 @@
+
 # Tempo Wrapper Chart
-# Single instance + S3 Trace Storage + Persistent WAL
+# Single Binary + S3 Object Storage + WAL PVC
 
 tempo:
   tempo:
@@ -20,7 +21,7 @@ tempo:
 
         s3:
           bucket: "YOUR_TEMPO_BUCKET"
-          endpoint: "YOUR_S3_ENDPOINT"
+          endpoint: "YOUR_REGION"
           region: "YOUR_REGION"
           insecure: false
 
@@ -41,3 +42,28 @@ tempo:
     enabled: true
     storageClassName: ""
     size: 10Gi
+
+  # Tempo 실행 계정
+  securityContext:
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+    runAsNonRoot: true
+
+  # PVC 권한 설정용 InitContainer
+  initContainers:
+    - name: init-storage-permissions
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          mkdir -p /var/tempo/wal
+          chown -R 10001:10001 /var/tempo
+          chmod -R u+rwX,g+rwX /var/tempo
+      securityContext:
+        runAsUser: 0
+        runAsNonRoot: false
+      volumeMounts:
+        - name: storage
+          mountPath: /var/tempo
