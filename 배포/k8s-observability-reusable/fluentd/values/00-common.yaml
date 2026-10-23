@@ -1,7 +1,0 @@
-kind: DaemonSet
-mountVarLogDirectory: true
-mountDockerContainersDirectory: false
-serviceAccount:
-  create: true
-rbac:
-  create: true
