@@ -1,0 +1,15 @@
+{{- $files := .Files.Glob "config/*.conf" -}}
+{{- if not $files -}}
+{{- fail "config/*.conf files are required" -}}
+{{- end -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-wrapper-files
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+{{- range $path, $_ := $files }}
+  {{ base $path }}: |-
+{{ $.Files.Get $path | indent 4 }}
+{{- end }}

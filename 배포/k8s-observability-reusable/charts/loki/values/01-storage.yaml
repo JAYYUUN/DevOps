@@ -1,0 +1,11 @@
+loki:
+  loki:
+    storage:
+      type: s3
+      bucketNames:
+        chunks: loki-test
+        ruler: loki-test
+        admin: loki-test
+      s3:
+        s3ForcePathStyle: true
+        insecure: false
