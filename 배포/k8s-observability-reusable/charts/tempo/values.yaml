@@ -22,8 +22,6 @@ tempo:
           bucket: "YOUR_TEMPO_BUCKET"
           endpoint: "YOUR_S3_ENDPOINT"
           region: "YOUR_REGION"
-          access_key: "YOUR_ACCESS_KEY"
-          secret_key: "YOUR_SECRET_KEY"
           insecure: false
 
         # S3 업로드 전 WAL 저장 경로
