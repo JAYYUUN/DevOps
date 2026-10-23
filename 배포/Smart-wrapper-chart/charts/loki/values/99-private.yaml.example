@@ -1,9 +1,0 @@
-# 복사한 99-private.yaml은 Git에 업로드하지 마세요.
-loki:
-  loki:
-    storage:
-      s3:
-        endpoint: https://YOUR_OBJECT_STORAGE_ENDPOINT
-        region: YOUR_REGION
-        accessKeyId: YOUR_ACCESS_KEY
-        secretAccessKey: YOUR_SECRET_KEY

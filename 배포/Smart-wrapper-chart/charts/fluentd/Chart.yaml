@@ -1,9 +1,0 @@
-apiVersion: v2
-name: fluentd-wrapper
-description: fluentd wrapper chart for Smart observability
-type: application
-version: 0.1.0
-dependencies:
-- name: fluentd
-  version: 0.5.3
-  repository: https://fluent.github.io/helm-charts
