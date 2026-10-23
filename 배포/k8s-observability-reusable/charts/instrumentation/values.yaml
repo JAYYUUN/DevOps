@@ -1,0 +1,14 @@
+instrumentation:
+  name: common-instrumentation
+  language: java
+  exporter:
+    endpoint: http://tempo.observability.svc.cluster.local:4318
+  protocol: http/protobuf
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: parentbased_traceidratio
+    argument: "0.1"
+  image: "" # optional: pin per-language agent image if required
+  env: [] # additional language-specific environment variables

@@ -1,0 +1,3 @@
+instrumentation:
+  name: java-instrumentation
+  language: java

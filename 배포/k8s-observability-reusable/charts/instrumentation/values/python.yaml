@@ -1,0 +1,3 @@
+instrumentation:
+  name: python-instrumentation
+  language: python

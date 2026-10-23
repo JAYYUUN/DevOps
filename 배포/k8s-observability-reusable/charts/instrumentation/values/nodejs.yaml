@@ -1,0 +1,3 @@
+instrumentation:
+  name: nodejs-instrumentation
+  language: nodejs

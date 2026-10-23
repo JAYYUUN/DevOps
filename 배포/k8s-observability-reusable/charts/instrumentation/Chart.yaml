@@ -1,0 +1,4 @@
+apiVersion: v2
+name: instrumentation
+version: 1.0.0
+description: Namespaced OpenTelemetry auto-instrumentation policy

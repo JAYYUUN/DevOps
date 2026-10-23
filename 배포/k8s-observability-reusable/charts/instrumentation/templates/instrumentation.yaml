@@ -1,0 +1,26 @@
+{{- $lang := required "instrumentation.language is required" .Values.instrumentation.language -}}
+{{- if not (has $lang (list "java" "python" "nodejs" "dotnet")) -}}
+{{- fail "instrumentation.language must be java, python, nodejs or dotnet" -}}
+{{- end -}}
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: {{ .Values.instrumentation.name | quote }}
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  exporter:
+    endpoint: {{ .Values.instrumentation.exporter.endpoint | quote }}
+  propagators:
+{{ toYaml .Values.instrumentation.propagators | indent 4 }}
+  sampler:
+{{ toYaml .Values.instrumentation.sampler | indent 4 }}
+  {{ $lang }}:
+{{- with .Values.instrumentation.image }}
+    image: {{ . | quote }}
+{{- end }}
+    env:
+      - name: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: {{ $.Values.instrumentation.protocol | quote }}
+{{- with .Values.instrumentation.env }}
+{{ toYaml . | indent 6 }}
+{{- end }}
