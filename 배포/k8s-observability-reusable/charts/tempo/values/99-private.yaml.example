@@ -1,0 +1,9 @@
+# Copy this file to 99-private.yaml and enter real credentials.
+# Never commit 99-private.yaml.
+tempo:
+  tempo:
+    storage:
+      trace:
+        s3:
+          access_key: "YOUR_ACCESS_KEY"
+          secret_key: "YOUR_SECRET_KEY"
