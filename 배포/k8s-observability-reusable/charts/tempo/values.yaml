@@ -1,4 +1,6 @@
-# Small-cluster starting point, not production HA.
+# Tempo Wrapper Chart
+# Single instance + S3 Trace Storage + Persistent WAL
+
 tempo:
   tempo:
     receivers:
@@ -8,14 +10,26 @@ tempo:
             endpoint: 0.0.0.0:4317
           http:
             endpoint: 0.0.0.0:4318
+
     retention: 24h
+
     storage:
       trace:
-        backend: local
-        local:
-          path: /var/tempo/traces
+        # Trace 데이터는 S3 Object Storage에 저장
+        backend: s3
+
+        s3:
+          bucket: "YOUR_TEMPO_BUCKET"
+          endpoint: "YOUR_S3_ENDPOINT"
+          region: "YOUR_REGION"
+          access_key: "YOUR_ACCESS_KEY"
+          secret_key: "YOUR_SECRET_KEY"
+          insecure: false
+
+        # S3 업로드 전 WAL 저장 경로
         wal:
           path: /var/tempo/wal
+
     resources:
       requests:
         cpu: 100m
@@ -23,6 +37,9 @@ tempo:
       limits:
         cpu: "1"
         memory: 1Gi
+
+  # WAL 데이터를 위한 PVC
   persistence:
     enabled: true
+    storageClassName: ""
     size: 10Gi
