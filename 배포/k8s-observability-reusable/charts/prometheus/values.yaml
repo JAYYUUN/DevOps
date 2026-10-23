@@ -1,15 +1,26 @@
-# 원본 values/*.yaml 설정을 병합한 기본 설정입니다. 별도 -f 없이 적용됩니다.
-# values/*.yaml은 선택적 기능별 오버라이드입니다. 수정 시 values.yaml도 동기화하세요.
+# 원본 values/*.yaml 설정을 병합한 기본 설정입니다.
+# values/*.yaml은 선택적 기능별 오버라이드입니다.
+# 수정 시 values.yaml도 동기화하세요.
+
 kube-prometheus-stack:
   prometheus:
     enabled: true
+
   grafana:
     enabled: true
     additionalDataSources:
-    - name: Loki
-      type: loki
-      access: proxy
-      url: http://loki-gateway.observability.svc.cluster.local
-      isDefault: false
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki-gateway.observability.svc.cluster.local
+        isDefault: false
+
+      - name: Tempo
+        uid: tempo
+        type: tempo
+        access: proxy
+        url: http://tempo.observability.svc.cluster.local:3200
+        isDefault: false
+
   alertmanager:
     enabled: true
