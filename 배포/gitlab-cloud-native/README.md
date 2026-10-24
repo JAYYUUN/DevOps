@@ -48,24 +48,79 @@ GitLab을 Kubernetes에 설치하고 외부 PostgreSQL·Redis·Object Storage와
 
 ## Secret 설정
 
-`secrets.<항목>.create: true`이면 Chart가 Secret을 생성하고 GitLab이 참조합니다. 비밀번호는 외부 DB·Redis에 설정된 실제 값이어야 합니다.
+인증값은 `values.yaml`의 `secrets`에 입력합니다. `templates/secrets.yaml`은 수정하지 않습니다. `create: true`이면 Helm이 Secret을 생성하고 GitLab이 참조합니다.
+
+| 입력 위치 | 넣을 값 |
+|---|---|
+| `secrets.postgresql.password` | 외부 PostgreSQL의 `global.psql.username` 계정 비밀번호 |
+| `secrets.redisPersistent.password` | `global.redis.host`에 연결할 Redis 비밀번호 |
+| `secrets.redisCache.password` | `global.redis.cache.host`에 연결할 캐시 Redis 비밀번호 |
+| `secrets.objectStorage.accessKey` | Object Storage에서 발급받은 S3 API Access Key |
+| `secrets.objectStorage.secretKey` | 위 Access Key와 짝인 Secret Key |
+| `secrets.objectStorage.region` | 해당 서비스에서 안내하는 S3 API 리전 값 |
+| `secrets.objectStorage.endpoint` | `https://`로 시작하는 S3 API 주소. 개별 버킷 주소가 아님 |
+| `secrets.objectStorage.pathStyle` | 경로에 버킷명을 넣는 방식이면 `true`. 서비스 요구사항에 맞춰 설정 |
+| `secrets.tls.certificate` | GitLab·Registry 도메인을 포함하는 인증서 PEM 전문 |
+| `secrets.tls.privateKey` | 위 인증서와 짝인 개인키 PEM 전문 |
 
 ```yaml
 secrets:
   postgresql:
     create: true
-    password: 실제_DB_비밀번호
+    password: "외부_DB에_설정한_비밀번호"
   redisPersistent:
     create: true
-    password: 실제_영속_Redis_비밀번호
+    password: "영속_Redis_비밀번호"
   redisCache:
     create: true
-    password: 실제_캐시_Redis_비밀번호
+    password: "캐시_Redis_비밀번호"
+  objectStorage:
+    create: true
+    accessKey: "발급받은_Access_Key"
+    secretKey: "발급받은_Secret_Key"
+    region: "서비스에서_안내하는_S3_리전"
+    endpoint: "https://서비스에서_안내하는_S3_endpoint"
+    pathStyle: true
+  tls:
+    create: true
+    certificate: |-
+      -----BEGIN CERTIFICATE-----
+      실제 인증서 내용
+      -----END CERTIFICATE-----
+    privateKey: |-
+      -----BEGIN PRIVATE KEY-----
+      실제 개인키 내용
+      -----END PRIVATE KEY-----
+  customCA:
+    create: false
+    name: gitlab-external-ca
+    certificate: ""
 ```
 
-Object Storage는 `secrets.objectStorage`에 접근 키·비밀 키·region·HTTPS endpoint를 입력합니다. Rails·Registry·백업용 Secret을 각각의 형식으로 생성합니다. TLS는 `secrets.tls`에 인증서·개인키를 입력합니다.
+비밀번호는 외부 DB·Redis에 설정된 실제 값과 일치해야 합니다. Secret을 생성해도 외부 서비스의 비밀번호가 변경되지는 않습니다. Object Storage 입력값으로 Rails·Registry·백업용 Secret 3개를 생성합니다.
 
-기존 Secret을 사용하려면 해당 `create`를 `false`로 바꾸고 기존 Secret 이름·키를 global 또는 upstream의 참조 설정에 지정합니다. Object Storage의 create 설정은 세 연결 Secret에 함께 적용됩니다. 사설 CA는 `secrets.customCA`에서 생성하고 `global.certificates.customCAs`에 같은 이름을 등록합니다.
+기존 Secret을 사용하려면 해당 `create`를 `false`로 변경하고 아래 위치에 기존 이름·키를 지정합니다.
+
+| 용도 | 기존 Secret 참조 위치 |
+|---|---|
+| PostgreSQL | `global.psql.password.secret` / `key` |
+| 영속 Redis | `global.redis.auth.secret` / `key` |
+| 캐시 Redis | `global.redis.cache.password.secret` / `key` |
+| Rails Object Storage | `global.appConfig.object_store.connection.secret` / `key` |
+| Registry Object Storage | `upstream.registry.storage.secret` / `key` |
+| 백업 Object Storage | `upstream.gitlab.toolbox.backups.objectStorage.config.secret` / `key` |
+| HTTPS 인증서 | `global.ingress.tls.secretName` — 키는 `tls.crt`, `tls.key` |
+
+Object Storage의 `create` 설정은 세 연결 Secret에 함께 적용됩니다. Secret은 GitLab과 같은 namespace에 있어야 합니다.
+
+사설 CA가 필요하면 `secrets.customCA.create: true`로 바꾸고 `certificate`에 CA PEM을 입력합니다. 아래 참조도 함께 추가합니다.
+
+```yaml
+global:
+  certificates:
+    customCAs:
+      - secret: gitlab-external-ca
+```
 
 **실제 인증값이 들어간 values는 Git에 올리지 않습니다. 입력값은 Helm release 정보에도 저장됩니다.** GitLab 내부 인증과 최초 root 비밀번호는 공식 Chart가 생성합니다.
 
