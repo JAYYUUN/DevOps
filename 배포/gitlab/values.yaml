@@ -20,6 +20,7 @@ gitalyVolume:
   csi:
     driver: CHANGE_ME
     volumeHandle: CHANGE_ME
+    fsType: ext4
   zone: CHANGE_ME
 upstream:
   gitlab:
