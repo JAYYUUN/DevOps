@@ -1,0 +1,200 @@
+# One CSP-neutral configuration file. See README.md before changing values.
+# External DB/Redis/buckets must exist. Secrets below are created by this Chart.
+global:
+  edition: ce
+  hosts:
+    domain: CHANGE_ME
+    https: true
+  ingress:
+    enabled: true
+    provider: nginx
+    class: CHANGE_ME
+    configureCertmanager: false
+    tls:
+      enabled: true
+      secretName: gitlab-external-tls
+  gatewayApi:
+    enabled: false
+    installEnvoy: false
+    configureEnvoy: false
+    configureCertmanager: false
+  # libpq TLS: verify DB hostname and CA; private CAs go in customCAs.
+  extraEnv:
+    PGSSLMODE: verify-full
+    PGSSLROOTCERT: /etc/ssl/certs/ca-certificates.crt
+  certificates:
+    customCAs: []
+    # - secret: gitlab-external-ca
+  # External PostgreSQL.
+  psql:
+    host: CHANGE_ME
+    port: 5432
+    username: gitlab
+    database: gitlabhq_production
+    password:
+      secret: gitlab-external-postgresql
+      key: password
+  # Persistent Redis: queues/shared state/etc. Cache is split below.
+  redis:
+    host: CHANGE_ME
+    port: 6379
+    scheme: rediss
+    auth:
+      enabled: true
+      secret: gitlab-external-redis-persistent
+      key: password
+    cache:
+      host: CHANGE_ME
+      port: 6379
+      scheme: rediss
+      password:
+        enabled: true
+        secret: gitlab-external-redis-cache
+        key: password
+  registry:
+    bucket: gitlab-registry
+  appConfig:
+    object_store:
+      enabled: true
+      proxy_download: true
+      connection:
+        secret: gitlab-external-object-storage
+        key: connection
+    lfs:
+      enabled: true
+      bucket: gitlab-lfs
+    artifacts:
+      enabled: true
+      bucket: gitlab-artifacts
+    uploads:
+      enabled: true
+      bucket: gitlab-uploads
+    packages:
+      enabled: true
+      bucket: gitlab-packages
+    backups:
+      bucket: gitlab-backups
+      tmpBucket: gitlab-backup-tmp
+  gitaly:
+    enabled: true
+    internal:
+      names: [default]
+  praefect:
+    enabled: false
+  kas:
+    enabled: false
+
+# PV points to an EXISTING cloud volume. No CSP-specific branches in templates.
+# The PVC is created and retained by Gitaly's StatefulSet, not by a separate script.
+gitalyVolume:
+  pvName: gitlab-gitaly-existing
+  csi:
+    driver: CHANGE_ME
+    volumeHandle: CHANGE_ME
+    fsType: CHANGE_ME
+    volumeAttributes: {}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: topology.kubernetes.io/zone
+              operator: In
+              values: [CHANGE_ME]
+  mountOptions: []
+
+# Upstream GitLab chart settings (alias: upstream).
+# global above is automatically inherited by this dependency.
+upstream:
+  installCertmanager: false
+  nginx-ingress:
+    enabled: false
+  prometheus:
+    install: false
+  gitlab-runner:
+    install: false
+  registry:
+    enabled: true
+    hpa:
+      minReplicas: 2
+      maxReplicas: 2
+    storage:
+      secret: gitlab-external-registry-storage
+      key: config
+    # Metadata database is not configured in this baseline.
+    database:
+      enabled: false
+  gitlab:
+    webservice:
+      minReplicas: 2
+      maxReplicas: 2
+    sidekiq:
+      minReplicas: 2
+      maxReplicas: 2
+    gitlab-shell:
+      minReplicas: 2
+      maxReplicas: 2
+    gitaly:
+      persistence:
+        enabled: true
+        size: 50Gi
+        accessMode: ReadWriteOnce
+        storageClass: gitlab-static
+        matchLabels:
+          gitlab-storage-role: gitaly-default
+      nodeSelector:
+        gitlab-gitaly: "true"
+      resources:
+        requests:
+          cpu: "2"
+          memory: 8Gi
+        limits:
+          cpu: "2"
+          memory: 8Gi
+      cgroups:
+        enabled: true
+        memoryBytes: 7516192768  # 7 GiB; tune with resources and node capacity.
+        repositories:
+          count: 1
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    toolbox:
+      backups:
+        objectStorage:
+          backend: s3
+          config:
+            secret: gitlab-external-backup-storage
+            key: config
+        cron:
+          enabled: true
+          schedule: "0 18 * * *"  # Cluster/controller timezone; verify before use.
+
+# 실제 인증값을 입력합니다. create: false이면 위에서 참조한 기존 Secret 사용.
+# 실제 비밀값이 포함된 values는 Git에 올리지 마세요.
+secrets:
+  postgresql:
+    create: true
+    password: CHANGE_ME
+  redisPersistent:
+    create: true
+    password: CHANGE_ME
+  redisCache:
+    create: true
+    password: CHANGE_ME
+  objectStorage:
+    create: true
+    accessKey: CHANGE_ME
+    secretKey: CHANGE_ME
+    region: CHANGE_ME
+    endpoint: https://CHANGE_ME
+    pathStyle: true
+  tls:
+    create: true
+    certificate: |-
+      CHANGE_ME
+    privateKey: |-
+      CHANGE_ME
+  customCA:
+    create: false
+    name: gitlab-external-ca
+    certificate: ""

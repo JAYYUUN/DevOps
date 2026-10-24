@@ -1,0 +1,33 @@
+{{- $p := .Values.upstream.gitlab.gitaly.persistence -}}
+{{- $class := $p.storageClass -}}
+{{- if eq $class "-" -}}{{- $class = "" -}}{{- end -}}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.gitalyVolume.pvName | quote }}
+  annotations:
+    helm.sh/resource-policy: keep
+  labels:
+    {{- toYaml $p.matchLabels | nindent 4 }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+spec:
+  capacity:
+    storage: {{ $p.size | quote }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ $p.accessMode | quote }}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ $class | quote }}
+  claimRef:
+    namespace: {{ .Release.Namespace | quote }}
+    name: {{ printf "repo-data-%s-gitaly-0" .Release.Name | quote }}
+  csi:
+    {{- toYaml .Values.gitalyVolume.csi | nindent 4 }}
+  {{- with .Values.gitalyVolume.nodeAffinity }}
+  nodeAffinity:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.gitalyVolume.mountOptions }}
+  mountOptions:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
