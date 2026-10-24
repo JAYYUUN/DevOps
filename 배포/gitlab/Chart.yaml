@@ -1,0 +1,14 @@
+apiVersion: v2
+name: gitlab-cloud-native
+version: 0.2.0
+appVersion: "19.5.1"
+kubeVersion: ">=1.29.0-0"
+type: application
+description: GitLab with external PostgreSQL, Redis and object storage, plus statically bound Gitaly storage
+annotations:
+  gitlab-platform/architecture: Cloud Native (single non-HA Gitaly)
+dependencies:
+  - name: gitlab
+    alias: upstream
+    version: 10.5.1
+    repository: https://charts.gitlab.io

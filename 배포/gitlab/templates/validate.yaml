@@ -1,0 +1,44 @@
+{{- /* Reject incomplete environment configuration before contacting a cluster. */ -}}
+{{- range $path, $value := dict
+  "global.hosts.domain" .Values.global.hosts.domain
+  "global.psql.host" .Values.global.psql.host
+  "global.redis.host" .Values.global.redis.host
+  "global.redis.cache.host" .Values.global.redis.cache.host
+  "gitalyVolume.csi.driver" .Values.gitalyVolume.csi.driver
+  "gitalyVolume.csi.volumeHandle" .Values.gitalyVolume.csi.volumeHandle
+  "gitalyVolume.csi.fsType" .Values.gitalyVolume.csi.fsType
+  "gitalyVolume.pvName" .Values.gitalyVolume.pvName
+-}}
+{{- if or (empty $value) (contains "CHANGE_ME" (toString $value)) -}}
+{{- fail (printf "%s: set an actual environment value in values.yaml" $path) -}}
+{{- end -}}
+{{- end -}}
+{{- if contains "CHANGE_ME" (toJson .Values.gitalyVolume.nodeAffinity) -}}
+{{- fail "gitalyVolume.nodeAffinity: use the real topology label and zone" -}}
+{{- end -}}
+{{- if and .Values.global.ingress.enabled (or (empty .Values.global.ingress.class) (eq .Values.global.ingress.class "CHANGE_ME")) -}}
+{{- fail "global.ingress.class: set an existing IngressClass" -}}
+{{- end -}}
+{{- if not .Values.upstream.gitlab.gitaly.persistence.enabled -}}{{- fail "Gitaly persistence must remain enabled" -}}{{- end -}}
+{{- if empty .Values.upstream.gitlab.gitaly.persistence.storageClass -}}{{- fail "Gitaly storageClass must be explicit; use '-' for no class" -}}{{- end -}}
+{{- if empty .Values.upstream.gitlab.gitaly.persistence.matchLabels -}}{{- fail "Gitaly PV selector labels must not be empty" -}}{{- end -}}
+{{- if ne (toJson .Values.global.gitaly.internal.names) "[\"default\"]" -}}{{- fail "This chart supports a single default Gitaly storage; add volumes before changing storage topology" -}}{{- end -}}
+{{- if or (not .Values.global.gitaly.enabled) .Values.global.praefect.enabled -}}{{- fail "This chart requires internal non-Cluster Gitaly" -}}{{- end -}}
+
+{{- range $name := list "postgresql" "redisPersistent" "redisCache" -}}
+{{- $item := index $.Values.secrets $name -}}
+{{- if and $item.create (or (empty $item.password) (contains "CHANGE_ME" $item.password)) -}}
+{{- fail (printf "secrets.%s.password: 실제 서비스의 비밀번호를 입력하세요" $name) -}}
+{{- end -}}
+{{- end -}}
+{{- if .Values.secrets.objectStorage.create -}}
+{{- range $key := list "accessKey" "secretKey" "region" "endpoint" -}}
+{{- $value := index $.Values.secrets.objectStorage $key -}}
+{{- if or (empty $value) (contains "CHANGE_ME" $value) -}}
+{{- fail (printf "secrets.objectStorage.%s: 실제 Object Storage 연결 값을 입력하세요" $key) -}}
+{{- end -}}
+{{- end -}}
+{{- $url := urlParse .Values.secrets.objectStorage.endpoint -}}
+{{- if or (ne $url.scheme "https") (empty $url.host) -}}{{- fail "Object Storage endpoint는 https:// 주소여야 합니다" -}}{{- end -}}
+{{- end -}}
+{{- if and .Values.secrets.customCA.create (empty .Values.secrets.customCA.certificate) -}}{{- fail "secrets.customCA.certificate: CA 인증서를 입력하세요" -}}{{- end -}}
