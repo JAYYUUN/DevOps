@@ -34,7 +34,6 @@ gitalyVolume:
     fsType: ext4
   zone: CHANGE_ME
 upstream:
-  upstream:
   gitlab-runner:
     install: false
   prometheus:
