@@ -176,3 +176,51 @@ kubectl get secret gitlab-gitlab-initial-root-password -n gitlab -o jsonpath='{.
 접속: `https://gitlab.internal`, 계정: `root`.
 
 실제 비밀값이 들어간 values는 Git에 올리지 않습니다. Helm release에도 저장됩니다. 단일 Gitaly와 공용 Redis 구성은 자동 장애 전환·완전한 운영 HA를 의미하지 않습니다. 코드 유지·백업·복구는 실제 환경에서 검증해야 합니다.
+
+========================================================================================================================================================================================================================
+
+
+## PC에서 GitLab 접속
+
+GitLab이 사설망에 있으므로 SSH 터널로 배스천을 경유해 접속합니다.
+
+### 1. GitLab LB 주소 확인
+
+배스천에서 실행합니다.
+
+```bash
+kubectl get gateway gitlab-gw -n gitlab
+```
+
+출력의 `ADDRESS`가 GitLab LB 주소입니다. 아래 예시에서는 `192.168.1.31`을 사용합니다.
+
+### 2. SSH 터널 연결
+
+PC의 PowerShell에서 실행합니다. 키 경로·SSH 포트·배스천 주소·LB 주소는 실제 환경에 맞게 변경합니다.
+
+```powershell
+ssh -o ExitOnForwardFailure=yes -i "C:\Users\JYH\Downloads\nhn-yhjung.pem" -p 22223 -N -L 127.0.0.1:443:192.168.1.31:443 ubuntu@180.210.79.188
+```
+
+접속하는 동안 이 창을 열어둡니다. 별도 프롬프트 없이 대기하는 것이 정상이며, 창을 닫거나 `Ctrl+C`를 누르면 터널도 종료됩니다.
+
+### 3. PC hosts 등록
+
+**관리자 권한 PowerShell**에서 실행합니다. 기존 `gitlab.internal` 항목이 있다면 중복 추가하지 말고 해당 주소를 `127.0.0.1`로 변경합니다.
+
+```powershell
+Add-Content -Path "$env:SystemRoot\System32\drivers\etc\hosts" -Value "`r`n127.0.0.1 gitlab.internal"
+ipconfig /flushdns
+```
+
+### 4. 브라우저 접속 및 로그인
+
+- 주소: https://gitlab.internal
+- ID: `root`
+- 최초 비밀번호: 배스천에서 아래 명령으로 확인
+
+```bash
+kubectl get secret gitlab-gitlab-initial-root-password -n gitlab -o jsonpath='{.data.password}' | base64 -d; echo
+```
+
+자체 서명 인증서를 사용하므로 브라우저에 인증서 경고가 표시될 수 있습니다. 최초 로그인 후 비밀번호를 변경합니다.
