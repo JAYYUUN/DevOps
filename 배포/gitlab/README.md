@@ -66,6 +66,95 @@ kubectl get nodes -L topology.kubernetes.io/zone
 
 DB 계정·포트가 다르면 `global.psql.username`·`port`, Redis TLS가 필요하면 `global.redis.scheme: rediss`를 추가합니다. 외부 DB는 기본 TLS 인증서·호스트 검증을 사용하므로 사설 CA 서비스는 별도 CA 신뢰 설정이 필요합니다.
 
+## PostgreSQL·Redis 사전 설정
+
+아래는 Ubuntu에 직접 설치한 서버 기준입니다. 관리형 서비스를 사용하면 계정·DB·접속 허용을 해당 서비스에서 설정합니다.
+
+### PostgreSQL
+
+**PostgreSQL 서버에서 실행합니다.** GitLab용 계정과 DB는 Helm이 생성하지 않으므로 미리 준비해야 합니다.
+
+```bash
+sudo -u postgres psql
+```
+
+```sql
+CREATE USER gitlab WITH PASSWORD '실제_DB_비밀번호';
+CREATE DATABASE gitlabhq_production OWNER gitlab;
+\q
+```
+
+이미 있는 계정·DB는 다시 생성하지 않습니다. 비밀번호는 `secrets.postgresql.password`에 같은 값을 입력합니다.
+
+외부 연결을 받도록 PostgreSQL 서버의 **실제 사설 IP**를 지정합니다.
+
+```bash
+sudo -u postgres psql -c "ALTER SYSTEM SET listen_addresses = 'localhost,192.168.20.61';"
+sudo systemctl restart postgresql
+```
+
+접속 허용 파일 위치를 확인합니다.
+
+```bash
+sudo -u postgres psql -Atc "SHOW hba_file;"
+```
+
+출력된 파일에 다음 규칙을 추가합니다. `접속원본_CIDR`은 PostgreSQL에서 보이는 Kubernetes 노드 또는 Pod의 실제 IP 대역으로 변경합니다.
+
+```text
+host  gitlabhq_production  gitlab  접속원본_CIDR  scram-sha-256
+```
+
+적용하고 포트를 확인합니다.
+
+```bash
+sudo -u postgres psql -c "SELECT pg_reload_conf();"
+sudo ss -lntp | grep ':5432'
+```
+
+현재 구성은 DB 연결에 TLS를 사용하지 않습니다. `values.yaml`의 기존 `global` 아래에 추가합니다. GitLab 웹 HTTPS와는 별개입니다.
+
+```yaml
+global:
+  extraEnv:
+    PGSSLMODE: disable
+```
+
+### Redis
+
+**Redis 서버에서 실행합니다.** `/etc/redis/redis.conf`의 기존 항목을 수정합니다.
+
+```bash
+sudo nano /etc/redis/redis.conf
+```
+
+```text
+bind 127.0.0.1 192.168.20.18
+protected-mode yes
+port 6379
+requirepass 실제_Redis_비밀번호
+```
+
+`192.168.20.18`은 Redis 서버의 실제 사설 IP로 변경합니다. 비밀번호는 `secrets.redisPersistent.password`에 같은 값을 입력합니다.
+
+```bash
+sudo systemctl restart redis-server
+sudo ss -lntp | grep ':6379'
+```
+
+`127.0.0.1`뿐 아니라 지정한 사설 IP에서도 포트를 수신해야 합니다.
+
+### 네트워크 허용
+
+서버 방화벽과 클라우드 보안 그룹에서 Kubernetes의 실제 접속 원본 대역에 다음 포트를 허용합니다.
+
+| 대상 서버 | 허용 포트 |
+|---|---|
+| PostgreSQL | TCP `5432` |
+| Redis | TCP `6379` |
+
+서비스의 수신 주소 설정과 방화벽 허용은 모두 필요합니다.
+
 ## 설치
 
 외부 DB·Redis·Object Storage와 SSD 디스크, Ingress Controller는 먼저 준비합니다. Gitaly가 실행될 노드는 [공식 런타임·cgroup 요건](https://docs.gitlab.com/administration/gitaly/kubernetes/)을 충족해야 합니다.
