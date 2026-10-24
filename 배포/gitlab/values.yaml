@@ -2,6 +2,8 @@
 # 기본 접속 주소: gitlab.internal / registry.internal
 # 실제 비밀값이 들어간 파일은 Git에 올리지 마세요.
 global:
+  extraEnv:
+    PGSSLMODE: disable
   psql:
     host: CHANGE_ME
   redis:
