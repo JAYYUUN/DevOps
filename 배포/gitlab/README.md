@@ -18,7 +18,7 @@ GitLab을 Kubernetes에 설치하고 외부 PostgreSQL·Redis/Valkey·Object Sto
 | `secrets.objectStorage.secretKey` | 위 Access Key와 짝인 비밀 키 | Access Key 발급 시 함께 받은 Secret Key |
 | `gitalyVolume.csi.driver` | Kubernetes가 클라우드 디스크를 연결할 때 쓰는 드라이버 이름 | AWS 일반 EBS: `ebs.csi.aws.com`, NHN NKS: `cinder.csi.openstack.org`. `kubectl get csidriver`로 설치 확인 |
 | `gitalyVolume.csi.volumeHandle` | 미리 만든 코드 저장용 SSD 디스크의 ID | 클라우드 Block Storage/EBS 상세의 볼륨 ID. AWS는 `vol-...`, NHN은 UUID |
-| `gitalyVolume.zone` | 위 디스크가 속한 가용 영역(AZ). 특정 노드 이름이 아님 | 클라우드 디스크 상세의 AZ 값. Kubernetes 노드의 `topology.kubernetes.io/zone` 라벨과 일치해야 함 |
+| `gitalyVolume.zone` | 위 디스크가 속한 가용 영역(AZ). 특정 노드 이름이 아님 | 클라우드 디스크 상세의 AZ 값. kubectl get nodes -L topology.kubernetes.io/zone 명령어 입력시, Kubernetes 노드의 `topology.kubernetes.io/zone` 라벨과 일치해야 함 |
 | `upstream.gitlab.gitaly.persistence.size` | 코드 저장용으로 사용할 용량 | 기존 디스크 크기 이하. `50Gi`는 약 50GiB. 디스크를 생성·확장하는 값이 아님 |
 
 기존 디스크의 영역은 Helm이 디스크 ID만으로 알 수 없어 입력이 필요합니다. **특정 Kubernetes 노드는 지정하지 않습니다.** 해당 영역의 노드 중에서 Kubernetes가 배치합니다. 영역 라벨이 다른 CSI 환경이라면 PV의 topology 설정을 그 드라이버에 맞춰야 합니다.
