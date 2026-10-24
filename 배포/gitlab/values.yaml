@@ -1,0 +1,36 @@
+# 이 파일의 CHANGE_ME만 실제 값으로 변경합니다.
+# 인증값이 들어간 파일은 Git에 올리지 마세요.
+global:
+  hosts:
+    domain: CHANGE_ME  # 내부 기준 도메인. 예: company.internal
+  ingress:
+    class: CHANGE_ME   # kubectl get ingressclass에서 확인한 이름
+  psql:
+    host: CHANGE_ME    # 외부 PostgreSQL 주소
+    username: gitlab   # DB 계정명. 다르면 변경
+  redis:
+    host: CHANGE_ME    # 외부 Redis/Valkey 주소. 캐시·작업 큐 공용
+
+secrets:
+  postgresql:
+    password: CHANGE_ME  # 위 DB 계정의 실제 비밀번호
+  redisPersistent:
+    password: CHANGE_ME  # 위 Redis/Valkey의 실제 비밀번호
+  objectStorage:
+    endpoint: https://CHANGE_ME  # S3 API endpoint, 버킷 주소 아님
+    region: CHANGE_ME          # 해당 서비스의 S3 리전 값
+    accessKey: CHANGE_ME       # S3 API Access Key
+    secretKey: CHANGE_ME       # 위 키와 짝인 Secret Key
+
+gitalyVolume:
+  csi:
+    driver: CHANGE_ME       # AWS: ebs.csi.aws.com / NHN: cinder.csi.openstack.org
+    volumeHandle: CHANGE_ME # 미리 생성한 SSD 볼륨 ID
+    fsType: ext4            # 실제 파일시스템이 다르면 변경
+  node: CHANGE_ME           # 볼륨과 같은 AZ의 Gitaly 전용 노드 hostname 라벨 값
+
+upstream:
+  gitlab:
+    gitaly:
+      persistence:
+        size: 50Gi  # 기존 볼륨 크기에 맞게 변경
