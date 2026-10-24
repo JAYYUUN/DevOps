@@ -71,10 +71,11 @@ DB 계정·포트가 다르면 `global.psql.username`·`port`, Redis TLS가 필�
 외부 DB·Redis·Object Storage와 SSD 디스크, Ingress Controller는 먼저 준비합니다. Gitaly가 실행될 노드는 [공식 런타임·cgroup 요건](https://docs.gitlab.com/administration/gitaly/kubernetes/)을 충족해야 합니다.
 
 ```bash
-helm lint ./gitlab-cloud-native -f ./gitlab-cloud-native/values.yaml
-helm upgrade --install gitlab ./gitlab-cloud-native \
+helm lint ./gitlab -f ./gitlab/values.yaml
+
+helm upgrade --install gitlab ./gitlab \
   --namespace gitlab --create-namespace \
-  -f ./gitlab-cloud-native/values.yaml \
+  -f ./gitlab/values.yaml \
   --wait --wait-for-jobs --timeout 30m
 ```
 
