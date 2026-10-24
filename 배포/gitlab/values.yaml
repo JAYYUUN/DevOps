@@ -1,0 +1,28 @@
+# CHANGE_ME에 실제 외부 서비스 값만 입력합니다. 자세한 확인 위치는 README 참고.
+# 기본 접속 주소: gitlab.internal / registry.internal
+# 실제 비밀값이 들어간 파일은 Git에 올리지 마세요.
+global:
+  psql:
+    host: CHANGE_ME
+  redis:
+    host: CHANGE_ME
+secrets:
+  postgresql:
+    password: CHANGE_ME
+  redisPersistent:
+    password: CHANGE_ME
+  objectStorage:
+    endpoint: https://CHANGE_ME
+    region: CHANGE_ME
+    accessKey: CHANGE_ME
+    secretKey: CHANGE_ME
+gitalyVolume:
+  csi:
+    driver: CHANGE_ME
+    volumeHandle: CHANGE_ME
+  zone: CHANGE_ME
+upstream:
+  gitlab:
+    gitaly:
+      persistence:
+        size: 50Gi
