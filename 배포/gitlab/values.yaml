@@ -8,6 +8,15 @@ global:
     host: CHANGE_ME
   redis:
     host: CHANGE_ME
+  ingress:
+    enabled: false
+    configureCertmanager: false
+  gatewayApi:
+    enabled: true
+    installEnvoy: true
+    configureEnvoy: true
+    configureCertmanager: false
+    
 secrets:
   postgresql:
     password: CHANGE_ME
@@ -25,6 +34,10 @@ gitalyVolume:
     fsType: ext4
   zone: CHANGE_ME
 upstream:
+  gatewayApiResources:
+    gateway:
+      tls:
+        secretName: gitlab-wildcard-tls
   gitlab:
     gitaly:
       persistence:
