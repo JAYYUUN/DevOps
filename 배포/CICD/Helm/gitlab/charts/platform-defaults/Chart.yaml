@@ -1,0 +1,5 @@
+apiVersion: v2
+name: platform-defaults
+version: 0.1.0
+type: library
+description: Fixed defaults imported by the parent GitLab chart

@@ -1,0 +1,15 @@
+apiVersion: v2
+name: argocd-platform
+version: 0.1.0
+appVersion: "v3.5.6"
+description: Argo CD와 전용 Gateway 구성
+type: application
+dependencies:
+  - name: argo-cd
+    alias: argocd
+    version: 10.11.1
+    repository: https://argoproj.github.io/argo-helm
+  - name: gateway-helm
+    alias: envoy-gateway
+    version: 1.9.2
+    repository: oci://docker.io/envoyproxy

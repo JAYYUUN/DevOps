@@ -1,0 +1,14 @@
+apiVersion: v2
+name: jenkins-platform
+version: 0.2.0
+appVersion: 2.580.1
+description: Jenkins controller with an existing cloud block volume
+type: application
+dependencies:
+- name: jenkins
+  version: 5.9.73
+  repository: https://charts.jenkins.io
+- name: gateway-helm
+  alias: envoy-gateway
+  version: 1.9.2
+  repository: oci://docker.io/envoyproxy
