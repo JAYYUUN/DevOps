@@ -4,8 +4,8 @@ GitLab은 별도 VM에 Linux 패키지로 설치합니다.
 설치 방법은 [GitLab 공식 설치 문서](https://docs.gitlab.com/install/package/)에서 사용하는 OS에 맞는 안내를 따릅니다.
 
 1. GitLab 패키지 저장소를 추가합니다.
-sudo apt update
-sudo apt install -y curl
+- sudo apt update
+- sudo apt install -y curl
 
 GitLab 저장소를 추가하려면 다음 스크립트를 사용하십시오
 curl --location "https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.deb.sh" | sudo bash
