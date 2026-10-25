@@ -8,7 +8,7 @@ GitLab은 별도 VM에 Linux 패키지로 설치합니다.
 - sudo apt install -y curl
 
 GitLab 저장소를 추가하려면 다음 스크립트를 사용하십시오
-curl --location "https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.deb.sh" | sudo bash
+- curl --location "https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.deb.sh" | sudo bash
 
 2. 패키지를 설치하세요
 sudo EXTERNAL_URL="https://gitlab.example.com" apt install gitlab-ee
