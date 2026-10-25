@@ -1,9 +1,0 @@
-dependencies:
-- name: jenkins
-  repository: https://charts.jenkins.io
-  version: 5.9.73
-- name: gateway-helm
-  repository: oci://docker.io/envoyproxy
-  version: 1.9.2
-digest: sha256:8731967fb0bb813b68f9664fee589c33112084fda2cb4b0a63c00f62d24b4d46
-generated: "2026-10-24T20:38:21.111287957-07:00"
