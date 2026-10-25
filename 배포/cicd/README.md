@@ -6,9 +6,9 @@ GitLab은 코드·배포 정의를 보관하고, Jenkins는 CI를 실행하며, 
 
 | 경로 | 용도 |
 |---|---|
-| `gitlab/` | 기존 GitLab 설치 모듈 |
-| `jenkins/` | 기존 Jenkins 설치 모듈 |
-| `argocd/` | 기존 Argo CD 설치 모듈 |
+| `gitlab/` | GitLab 설치 모듈 |
+| `jenkins/` | Jenkins 설치 모듈 |
+| `argocd/` | Argo CD 설치 모듈 |
 | `integration/` | 세 도구의 인증정보·Pipeline·배포 저장소·Application을 연결하는 별도 Helm Chart |
 
 세 설치 모듈은 독립적으로 사용합니다. 연동은 세 도구 설치 후 한 번 실행합니다.
