@@ -1,9 +1,0 @@
-dependencies:
-- name: argo-cd
-  repository: https://argoproj.github.io/argo-helm
-  version: 10.11.1
-- name: gateway-helm
-  repository: oci://docker.io/envoyproxy
-  version: 1.9.2
-digest: sha256:5373579334a3dc7ecd54b3b4c37643540674658c846721b0f08947a1734f4e4b
-generated: "2026-10-25T13:08:05.720113576+08:00"
