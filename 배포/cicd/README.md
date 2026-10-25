@@ -1,4 +1,4 @@
-# CI/CD 도구 설치
+# CI/CD 도구 설치 (Helm)
 
 GitLab·Jenkins·Argo CD를 Kubernetes에 Helm으로 설치하는 구성입니다. 각 도구는 독립된 모듈로 분리되어 필요한 도구만 개별적으로 설치할 수 있습니다.
 
