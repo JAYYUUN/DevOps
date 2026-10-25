@@ -87,7 +87,7 @@ curl -kI --connect-timeout 5 --resolve argocd.internal:443:<ARGOCD_LB_IP> https:
 PC가 사설 IP에 접근하지 못하면 PC PowerShell에서 SSH 터널을 엽니다. 키·배스천 주소·포트·LB IP는 실제 값으로 바꿉니다. GitLab/Jenkins 터널이 로컬 443·8443을 사용 중일 수 있어 Argo CD 예시는 9443을 사용합니다.
 
 ```powershell
-ssh -o ExitOnForwardFailure=yes -i "C:\경로\접속키.pem" -p 22223 -N -L 127.0.0.1:9443:<ARGOCD_LB_IP>:443 ubuntu@배스천_주소
+ssh -o ExitOnForwardFailure=yes -i "C:\경로\접속키.pem" -p [Bastion 접속 포트주소] -N -L 127.0.0.1:9443:<ARGOCD_LB_IP>:443 ubuntu@배스천_주소
 ```
 
 관리자 PowerShell에서 PC hosts에 추가합니다. 기존 항목이 있으면 중복 추가하지 않습니다.
