@@ -1,6 +1,6 @@
 # Jenkins
 
-공식 Jenkins Chart와 전용 Envoy Gateway Controller를 설치합니다. GitLab의 Controller·Gateway·LB·인증서·볼륨을 공유하지 않습니다. Gateway API·Envoy CRD만 클러스터 공통으로 관리합니다.
+공식 Jenkins Chart와 전용 Envoy Gateway Controller를 설치합니다. 
 
 ## 구성
 
@@ -18,6 +18,7 @@ Jenkins Chart 5.9.73 / Jenkins 2.580.1, Envoy Gateway Chart 1.9.2를 포함합�
 
 ## 입력 — values.yaml
 
+Jenkins 설정·플러그인·인증정보·작업 정의·빌드 이력·로그를 저장할 PVC를 클라우드 블록 스토리지로 정적 프로비저닝 합니다.
 볼륨의 `CHANGE_ME` 세 개와 `gateway.serviceAnnotations`의 키·값을 변경합니다.
 
 | 항목 | 넣을 값·확인 방법 |
