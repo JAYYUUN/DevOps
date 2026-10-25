@@ -18,13 +18,14 @@ Jenkins Chart 5.9.73 / Jenkins 2.580.1, Envoy Gateway Chart 1.9.2를 포함합�
 
 ## 입력 — values.yaml
 
+volume은 Jenkins 본체의 데이터를 보관할 디스크 연결 설정이다. Jenkins 설정·플러그인·인증정보·작업 정의·빌드 이력·로그를 저장한다.
 필수 입력은 `CHANGE_ME` 세 개입니다.
 
 | 항목 | 넣을 값·확인 방법 |
 |---|---|
-| `volume.driver` | 설치된 CSI 이름. NHN `cinder.csi.openstack.org`, AWS EBS `ebs.csi.aws.com`. `kubectl get csidriver`로 확인 |
-| `volume.volumeHandle` | 미리 만든 Jenkins 전용 볼륨 ID. NHN Block Storage UUID, AWS EBS `vol-...`. GitLab 디스크 사용 금지 |
-| `volume.zone` | 실제 볼륨 가용 영역. NHN 현재 노드 예 `kr-pub-a`. `KR1` 같은 리전 이름 아님 |
+| `volume.driver` | 설치된 CSI 이름. AWS EBS `ebs.csi.aws.com`. `kubectl get csidriver`로 확인 |
+| `volume.volumeHandle` | 미리 만든 Jenkins 전용 볼륨 ID. UUID, AWS EBS `vol-...`. |
+| `volume.zone` | 실제 볼륨 가용 영역. kubectl get nodes -L topology.kubernetes.io/zone에서 확인, `KR1` 같은 리전 이름 아님 |
 | `volume.size` | 기본 `20Gi`. 실제 볼륨 크기 이하. 디스크를 생성·확장하지 않음 |
 | `volume.fsType` | 기본 `ext4`. 기존 XFS 볼륨만 `xfs`. 다른 형식으로 자동 변환하지 않음 |
 | `gateway.serviceAnnotations` | LB 생성 방식. 현재 NHN 내부망용 기본값. 다른 CSP는 내부 LB annotation으로 교체 |
