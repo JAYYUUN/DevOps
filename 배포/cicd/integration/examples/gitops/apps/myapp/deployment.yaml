@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cicd-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cicd-demo
+  template:
+    metadata:
+      labels:
+        app: cicd-demo
+    spec:
+      imagePullSecrets:
+        - name: __PULL_SECRET__
+      containers:
+        - name: app
+          image: cicd-app:pending
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cicd-demo
+spec:
+  selector:
+    app: cicd-demo
+  ports:
+    - port: 80
+      targetPort: 8080

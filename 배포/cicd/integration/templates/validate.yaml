@@ -1,0 +1,42 @@
+{{- range $key, $v := dict "source.project" .Values.source.project "deployment.project" .Values.deployment.project -}}
+{{- if or (empty $v) (contains "CHANGE_ME" $v) (not (regexMatch "^[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)+$" $v)) -}}
+{{- fail (printf "%s: root/cicd-app처럼 namespace/프로젝트 경로를 입력하세요" $key) -}}
+{{- end -}}
+{{- end -}}
+{{- if eq .Values.source.project .Values.deployment.project -}}{{- fail "소스 프로젝트와 배포 프로젝트는 분리하세요" -}}{{- end -}}
+{{- if and (empty .Values.gitlab.existingSecret) (or (empty .Values.gitlab.bootstrapToken) (contains "CHANGE_ME" .Values.gitlab.bootstrapToken)) -}}
+{{- fail "gitlab.bootstrapToken 또는 같은 namespace의 gitlab.existingSecret을 지정하세요" -}}
+{{- end -}}
+{{- range $url := list .Values.gitlab.url .Values.jenkins.url -}}
+{{- $u := urlParse $url -}}
+{{- if or (not (has $u.scheme (list "http" "https"))) (empty $u.host) (not (empty $u.userinfo)) -}}{{- fail "서비스 URL은 인증값 없는 http:// 또는 https:// 주소여야 합니다" -}}{{- end -}}
+{{- end -}}
+{{- if not (regexMatch "^[A-Za-z0-9_-]+$" .Values.jenkins.jobName) -}}{{- fail "jenkins.jobName은 영문·숫자·밑줄·하이픈만 사용하세요" -}}{{- end -}}
+{{- range $value := list .Values.deployment.namespace .Values.argocd.applicationName -}}
+{{- if or (gt (len $value) 50) (not (regexMatch "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$" $value)) -}}{{- fail "배포 namespace와 Application 이름은 50자 이하의 Kubernetes DNS 이름을 사용하세요" -}}{{- end -}}
+{{- end -}}
+{{- range $p := list .Values.deployment.path .Values.source.pipelineFile -}}
+{{- if or (empty $p) (hasPrefix "/" $p) (has ".." (splitList "/" $p)) -}}{{- fail "저장소 경로는 ..이 없는 상대 경로를 입력하세요" -}}{{- end -}}
+{{- end -}}
+{{- if or (lt (int .Values.gitlab.tokenLifetimeDays) 1) (gt (int .Values.gitlab.tokenLifetimeDays) 365) -}}
+{{- fail "gitlab.tokenLifetimeDays는 1~365 범위에서 GitLab 정책에 맞게 지정하세요" -}}
+{{- end -}}
+{{- if or (empty .Values.source.branch) (empty .Values.deployment.branch) (empty .Values.source.pipelineFile) -}}
+{{- fail "소스·배포 브랜치와 Jenkinsfile 경로를 입력하세요" -}}
+{{- end -}}
+
+{{- range $field, $value := dict "registry.address" .Values.registry.address "registry.repository" .Values.registry.repository -}}
+{{- if or (empty $value) (contains "CHANGE_ME" $value) -}}{{- fail (printf "%s에 실제 Registry 값을 입력하세요" $field) -}}{{- end -}}
+{{- end -}}
+{{- if not (regexMatch "^[a-zA-Z0-9.-]+(:[0-9]+)?$" .Values.registry.address) -}}{{- fail "registry.address는 https://와 경로를 제외한 호스트[:포트]입니다" -}}{{- end -}}
+{{- if not (regexMatch "^[a-z0-9]+([._-][a-z0-9]+)*(/[a-z0-9]+([._-][a-z0-9]+)*)*$" .Values.registry.repository) -}}{{- fail "registry.repository는 태그 없는 소문자 이미지 경로입니다" -}}{{- end -}}
+{{- range $kind := list "push" "pull" -}}
+{{- $auth := index $.Values.registry $kind -}}
+{{- range $field := list "username" "password" -}}
+{{- $value := default (index $.Values.registry $field) (index $auth $field) -}}
+{{- if or (empty $value) (contains "CHANGE_ME" $value) -}}{{- fail (printf "Registry %s용 %s를 입력하세요" $kind $field) -}}{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- range $path := list .Values.build.context .Values.build.dockerfile -}}
+{{- if or (empty $path) (hasPrefix "/" $path) (has ".." (splitList "/" $path)) -}}{{- fail "build 경로는 저장소 기준 상대 경로입니다" -}}{{- end -}}
+{{- end -}}

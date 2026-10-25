@@ -1,0 +1,48 @@
+{{- if empty .Values.gateway.serviceAnnotations -}}
+{{- fail "gateway.serviceAnnotations: README의 CSP별 내부 LB 설정을 입력하세요" -}}
+{{- end -}}
+{{- range $key, $value := .Values.gateway.serviceAnnotations -}}
+{{- if or (contains "CHANGE_ME" $key) (contains "CHANGE_ME" (toString $value)) -}}
+{{- fail "gateway.serviceAnnotations의 CHANGE_ME 키와 값을 CSP별 내부 LB 설정으로 교체하세요" -}}
+{{- end -}}
+{{- end -}}
+{{- $route := .Values.argocd.server.httproute -}}
+{{- if or (not $route.enabled) (ne (len $route.hostnames) 1) -}}
+{{- fail "server.httproute.enabled=true, hostnames는 도메인 하나를 지정하세요" -}}
+{{- end -}}
+{{- if or (empty .Values.argocd.global.domain) (ne (first $route.hostnames) .Values.argocd.global.domain) -}}
+{{- fail "argocd.global.domain과 server.httproute.hostnames 도메인을 일치시키세요" -}}
+{{- end -}}
+{{- if ne (toJson $route.parentRefs) (toJson (list (dict "name" "argocd-gateway" "sectionName" "https"))) -}}
+{{- fail "server.httproute.parentRefs는 argocd-gateway/https 연결을 유지하세요" -}}
+{{- end -}}
+{{- if .Values.argocd.server.ingress.enabled -}}
+{{- fail "Gateway API를 사용하므로 server.ingress.enabled=false로 유지하세요" -}}
+{{- end -}}
+{{- if ne (toString (index .Values.argocd.configs.params "server.insecure")) "true" -}}
+{{- fail "이 모듈은 Gateway에서 TLS를 종료하므로 configs.params.server.insecure=true로 유지하세요" -}}
+{{- end -}}
+{{- if or (not .Values.argocd.redis.enabled) (index .Values.argocd "redis-ha" "enabled") (not (empty .Values.argocd.externalRedis.host)) -}}
+{{- fail "이 초기 모듈은 전용 내부 Redis를 사용합니다. redis.enabled=true, redis-ha.enabled=false, externalRedis.host는 비워두세요" -}}
+{{- end -}}
+{{- if index .Values "envoy-gateway" "crds" "enabled" -}}
+{{- fail "Gateway·Envoy CRD는 공통 관리하므로 envoy-gateway.crds.enabled=false로 유지하세요" -}}
+{{- end -}}
+{{- $controller := index .Values "envoy-gateway" "config" "envoyGateway" "gateway" "controllerName" -}}
+{{- if or (empty $controller) (has $controller (list "gateway.envoyproxy.io/gatewayclass-controller" "gateway.envoyproxy.io/gitlab-gatewayclass-controller" "gateway.envoyproxy.io/jenkins-controller")) -}}
+{{- fail "Envoy controllerName은 다른 모듈과 겹치지 않는 전용 값으로 지정하세요" -}}
+{{- end -}}
+{{- if lt (int .Values.tls.validDays) 1 -}}
+{{- fail "tls.validDays는 1 이상이어야 합니다" -}}
+{{- end -}}
+{{- if .Values.repository.enabled -}}
+{{- range $key := list "url" "username" "token" -}}
+{{- $value := index $.Values.repository $key -}}
+{{- if or (empty $value) (contains "CHANGE_ME" $value) -}}
+{{- fail (printf "repository.%s: 실제 GitLab 저장소 연결 값을 입력하세요" $key) -}}
+{{- end -}}
+{{- end -}}
+{{- if not (hasPrefix "https://" .Values.repository.url) -}}
+{{- fail "repository.url은 https://로 시작하는 Git clone 주소를 입력하세요" -}}
+{{- end -}}
+{{- end -}}

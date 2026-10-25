@@ -1,0 +1,5 @@
+apiVersion: v2
+name: cicd-integration
+version: 0.2.0
+type: application
+description: 기존 GitLab·Jenkins·Argo CD를 연결하는 초기화 Job

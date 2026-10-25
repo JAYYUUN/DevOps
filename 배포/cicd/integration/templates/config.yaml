@@ -1,0 +1,54 @@
+{{- $config := deepCopy .Values -}}
+{{- $_ := unset $config.gitlab "bootstrapToken" -}}
+{{- $_ := unset $config "registry" -}}
+{{- $_ := set $config "registry" (dict "address" .Values.registry.address "repository" .Values.registry.repository) -}}
+{{- $_ := set $config "pullSecret" (printf "%s-pull" (include "cicd.name" .)) -}}
+{{- $_ := set $config "owner" (include "cicd.owner" .) -}}
+{{- $_ := set $config "namespace" .Release.Namespace -}}
+{{- $_ := set $config "stateSecret" (printf "%s-state" (include "cicd.name" .)) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cicd.name" . }}-config
+data:
+  settings.json: {{ $config | toJson | quote }}
+  bootstrap.py: |
+    {{- .Files.Get "files/bootstrap.py" | nindent 4 }}
+  configure.groovy: |
+    {{- .Files.Get "files/configure.groovy" | nindent 4 }}
+  Jenkinsfile: |
+    {{- .Files.Get "examples/source/Jenkinsfile" | nindent 4 }}
+  Dockerfile: |
+    {{- .Files.Get "examples/source/Dockerfile" | nindent 4 }}
+  kustomization.yaml: |
+    {{- .Files.Get "examples/gitops/apps/myapp/kustomization.yaml" | nindent 4 }}
+  deployment.yaml: |
+    {{- .Files.Get "examples/gitops/apps/myapp/deployment.yaml" | nindent 4 }}
+  app.py: |
+    {{- .Files.Get "examples/source/app.py" | nindent 4 }}
+  test_app.py: |
+    {{- .Files.Get "examples/source/test_app.py" | nindent 4 }}
+  publish.py: |
+    {{- .Files.Get "examples/source/publish.py" | nindent 4 }}
+---
+{{- if empty .Values.gitlab.existingSecret }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "cicd.name" . }}-bootstrap
+type: Opaque
+stringData:
+  api-token: {{ .Values.gitlab.bootstrapToken | quote }}
+{{- end }}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "cicd.name" . }}-registry
+type: Opaque
+stringData:
+  push-username: {{ default .Values.registry.username .Values.registry.push.username | quote }}
+  push-password: {{ default .Values.registry.password .Values.registry.push.password | quote }}
+  pull-username: {{ default .Values.registry.username .Values.registry.pull.username | quote }}
+  pull-password: {{ default .Values.registry.password .Values.registry.pull.password | quote }}
