@@ -11,7 +11,7 @@ GitLab 저장소를 추가하려면 다음 스크립트를 사용하십시오
 - curl --location "https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.deb.sh" | sudo bash
 
 2. 패키지를 설치하세요
-sudo EXTERNAL_URL="https://gitlab.example.com" apt install gitlab-ee
+- sudo EXTERNAL_URL="https://gitlab.example.com" apt install gitlab-ee
 
 - `EXTERNAL_URL`에 실제로 GitLab에 접속할 주소를 입력합니다. `gitlab.example.com`은 예시이므로 서버 IP 또는 사용할 도메인으로 변경해야 합니다.
 - `https://`의 경우: 기본적으로 Let’s Encrypt 인증서 자동 발급·적용을 시도합니다. 실제 공개 도메인의 DNS가 서버를 가리키고, 외부에서 서버의 TCP 80·443 포트에 접근할 수 있어야 합니다. 사설 IP는 자동 발급 대상이 아니며, 사설망에서 HTTPS를 사용하려면 자체 인증서 또는 사내 인증서를 별도로 구성해야 합니다.
