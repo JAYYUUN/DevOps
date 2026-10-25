@@ -1,0 +1,43 @@
+{{- $name := printf "%s-%s-home" .Release.Namespace .Release.Name -}}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ $name | quote }}
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  capacity:
+    storage: {{ .Values.volume.size | quote }}
+  accessModes: [ReadWriteOnce]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: {{ .Release.Namespace | quote }}
+    name: jenkins-home
+  csi:
+    driver: {{ .Values.volume.driver | quote }}
+    volumeHandle: {{ .Values.volume.volumeHandle | quote }}
+    fsType: {{ .Values.volume.fsType | quote }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: topology.kubernetes.io/zone
+              operator: In
+              values: [{{ .Values.volume.zone | quote }}]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jenkins-home
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: [ReadWriteOnce]
+  volumeMode: Filesystem
+  storageClassName: ""
+  volumeName: {{ $name | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.volume.size | quote }}
