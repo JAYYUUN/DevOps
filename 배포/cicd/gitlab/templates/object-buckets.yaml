@@ -1,0 +1,42 @@
+{{ if .Values.bucketSetup.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-object-buckets-%d" .Release.Name .Release.Revision | trunc 63 | trimSuffix "-" }}
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      containers:
+        - name: create-buckets
+          image: {{ .Values.bucketSetup.image | quote }}
+          command: [/bin/bash, -ec]
+          args:
+            - |
+              for bucket in "$LFS_BUCKET" "$ARTIFACTS_BUCKET" "$UPLOADS_BUCKET" "$PACKAGES_BUCKET" "$REGISTRY_BUCKET" "$BACKUP_BUCKET" "$TMP_BUCKET"; do
+                s3cmd --config=/etc/s3/config info "s3://$bucket" >/dev/null 2>&1 || s3cmd --config=/etc/s3/config mb "s3://$bucket"
+              done
+          env:
+            - {name: LFS_BUCKET, value: {{ .Values.global.appConfig.lfs.bucket | quote }}}
+            - {name: ARTIFACTS_BUCKET, value: {{ .Values.global.appConfig.artifacts.bucket | quote }}}
+            - {name: UPLOADS_BUCKET, value: {{ .Values.global.appConfig.uploads.bucket | quote }}}
+            - {name: PACKAGES_BUCKET, value: {{ .Values.global.appConfig.packages.bucket | quote }}}
+            - {name: REGISTRY_BUCKET, value: {{ .Values.global.registry.bucket | quote }}}
+            - {name: BACKUP_BUCKET, value: {{ .Values.global.appConfig.backups.bucket | quote }}}
+            - {name: TMP_BUCKET, value: {{ .Values.global.appConfig.backups.tmpBucket | quote }}}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          volumeMounts:
+            - {name: s3, mountPath: /etc/s3, readOnly: true}
+      volumes:
+        - name: s3
+          secret:
+            secretName: {{ .Values.upstream.gitlab.toolbox.backups.objectStorage.config.secret | quote }}
+            items:
+              - {key: {{ .Values.upstream.gitlab.toolbox.backups.objectStorage.config.key | quote }}, path: config}
+{{ end }}

@@ -1,0 +1,33 @@
+{{- $config := deepCopy .Values -}}
+{{- $_ := unset $config.gitlab "bootstrapToken" -}}
+{{- $_ := set $config "owner" (include "cicd.owner" .) -}}
+{{- $_ := set $config "namespace" .Release.Namespace -}}
+{{- $_ := set $config "stateSecret" (printf "%s-state" (include "cicd.name" .)) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cicd.name" . }}-config
+data:
+  settings.json: {{ $config | toJson | quote }}
+  bootstrap.py: |
+    {{- .Files.Get "files/bootstrap.py" | nindent 4 }}
+  configure.groovy: |
+    {{- .Files.Get "files/configure.groovy" | nindent 4 }}
+  Jenkinsfile: |
+    {{- .Files.Get "examples/source/Jenkinsfile" | nindent 4 }}
+  app.py: |
+    {{- .Files.Get "examples/source/app.py" | nindent 4 }}
+  test_app.py: |
+    {{- .Files.Get "examples/source/test_app.py" | nindent 4 }}
+  publish.py: |
+    {{- .Files.Get "examples/source/publish.py" | nindent 4 }}
+---
+{{- if empty .Values.gitlab.existingSecret }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "cicd.name" . }}-bootstrap
+type: Opaque
+stringData:
+  api-token: {{ .Values.gitlab.bootstrapToken | quote }}
+{{- end }}

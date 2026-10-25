@@ -1,0 +1,15 @@
+{{- if .Values.repository.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argocd-gitlab-repository
+  labels:
+    argocd.argoproj.io/secret-type: repository
+    app.kubernetes.io/part-of: argocd
+type: Opaque
+stringData:
+  type: git
+  url: {{ .Values.repository.url | quote }}
+  username: {{ .Values.repository.username | quote }}
+  password: {{ .Values.repository.token | quote }}
+{{- end }}

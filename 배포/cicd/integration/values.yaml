@@ -1,0 +1,51 @@
+# 기존 세 도구를 먼저 설치한 뒤 이 Chart를 설치합니다.
+gitlab:
+  url: http://gitlab-webservice-default.gitlab.svc.cluster.local:8181
+  # api 범위, 두 프로젝트의 Maintainer 이상 권한. 프로젝트 생성 시 해당 namespace 생성 권한도 필요.
+  bootstrapToken: CHANGE_ME
+  existingSecret: ""      # 기존 Secret 사용 시 같은 integration namespace의 Secret 이름 (키: api-token)
+  tokenLifetimeDays: 30
+  createProjectsIfMissing: true
+
+source:
+  project: CHANGE_ME      # 소스 프로젝트 전체 경로. 예: root/cicd-app
+  branch: main
+  pipelineFile: Jenkinsfile
+
+deployment:
+  project: CHANGE_ME      # 배포 전용 프로젝트 전체 경로. 예: root/cicd-gitops
+  branch: main
+  path: apps/demo         # 이 저장소 안의 Kubernetes YAML 디렉터리
+  namespace: cicd-demo    # 실제 배포 대상 namespace
+
+jenkins:
+  namespace: jenkins
+  url: http://jenkins.jenkins.svc.cluster.local:8080
+  adminSecret: jenkins   # 원본 Chart가 만든 관리자 Secret
+  userKey: jenkins-admin-user
+  passwordKey: jenkins-admin-password
+  jobName: cicd-pipeline
+  pollSchedule: "H/2 * * * *"  # Git 변경 감지. Webhook·추가 플러그인 불필요
+  runInitialBuild: true
+
+argocd:
+  namespace: argocd
+  applicationName: cicd-demo
+  automated: true
+  prune: false
+  selfHeal: true
+
+demo:
+  seedEmptyRepositories: true  # 빈 신규 저장소에만 예제 소스·Jenkinsfile·ConfigMap 생성
+
+bootstrap:
+  image: python:3.12.12-alpine3.22
+  activeDeadlineSeconds: 900
+  waitSeconds: 300
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
