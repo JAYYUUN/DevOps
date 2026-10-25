@@ -1,4 +1,5 @@
 ## GitLab 설치
+- 설치 전, 하드웨어 요구사항을 반드시 확인
 
 GitLab은 별도 VM에 Linux 패키지로 설치합니다.
 설치 방법은 [GitLab 공식 설치 문서](https://docs.gitlab.com/install/package/)에서 사용하는 OS에 맞는 안내를 따릅니다.
@@ -18,6 +19,7 @@ GitLab 저장소를 추가하려면 다음 스크립트를 사용하십시오
 - `http://`의 경우: 인증서 발급 없이 HTTP로 구성합니다. 도메인 없이 서버 IP로 설치할 수 있으며, 접속 트래픽은 암호화되지 않습니다.
 
 ## Jenkins 설치
+- 설치 전, 하드웨어 요구사항을 반드시 확인
 
 Jenkins는 별도 VM에 설치합니다.
 설치 방법은 [Jenkins 공식 Linux 설치 문서](https://www.jenkins.io/doc/book/installing/linux/)에서 사용하는 OS에 맞는 안내를 따릅니다.
