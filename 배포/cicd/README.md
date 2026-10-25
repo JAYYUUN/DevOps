@@ -11,7 +11,7 @@ GitLab에 코드를 push하면 Jenkins가 테스트·컨테이너 이미지 빌�
 | `argocd/` | Argo CD 설치. Git의 배포 설정을 Kubernetes에 적용 |
 | `integration/` | Webhook·인증정보·Jenkins 작업·Argo CD 배포 연결 |
 
-세 도구는 각 README대로 먼저 설치합니다. 연동 설정은 그다음 진행합니다. 기존 세 모듈의 파일은 수정하지 않았습니다.
+세 도구는 각 README대로 먼저 설치합니다. 연동 설정은 그다음 진행합니다. 
 
 ## 전체 동작
 
