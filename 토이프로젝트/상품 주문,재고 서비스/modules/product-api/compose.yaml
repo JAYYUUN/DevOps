@@ -1,0 +1,44 @@
+services:
+  mariadb:
+    image: mariadb:11.4
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: product
+      MARIADB_USER: product_user
+      MARIADB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+    volumes:
+      - product-db:/var/lib/mysql
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  redis:
+    image: redis:7.4-alpine
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      retries: 10
+  migrate:
+    build: .
+    command: [python, -m, app.migrate]
+    environment: &app-env
+      DATABASE_URL: mysql+pymysql://product_user:${DB_PASSWORD}@mariadb:3306/product?charset=utf8mb4
+      REDIS_URL: redis://redis:6379/0
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?set ADMIN_API_KEY}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?set INTERNAL_API_KEY}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+  api:
+    build: .
+    ports:
+      - 127.0.0.1:8000:8000
+    environment: *app-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+volumes:
+  product-db:
