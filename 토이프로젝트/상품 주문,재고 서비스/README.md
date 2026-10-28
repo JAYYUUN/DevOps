@@ -1,84 +1,70 @@
-# 상품 주문·재고 서비스 설계
+# 상품 주문·재고 서비스
 
-## 1. 서비스별 구현 범위
+주문이 접수된 뒤 재고가 확보되고, 그 결과로 주문 상태가 바뀌는 흐름을 단계적으로 구현하는 프로젝트다.
 
-| 서비스 | 구현할 기능 | 직접 관리할 데이터 |
-|---|---|---|
-| 상품 서비스 | 상품 등록·수정·판매 중지, 상품 목록·상세 조회, 조회 캐시 관리 | 상품명·설명·가격·판매 상태 |
-| 주문 서비스 | 주문 접수, 주문 목록·상태 조회, 재고 처리 결과 반영, 주문 취소, 실패·미완료 주문 조회 | 주문·주문 상품·주문 상태 |
-| 재고 서비스 | 입고 등록, 재고 조회, 주문 수량 예약, 예약 실패 처리, 취소 시 예약 해제 | 재고 수량·주문별 예약 내역 |
-| 알림 서비스 | 주문 확정·실패·취소 이벤트 처리, 사용자 알림 목록·읽음 처리, 발송 실패 관리 | 사용자 알림·처리 상태 |
+## 현재 구현 범위
 
-알림 기능의 첫 범위는 서비스 안에서 조회하는 알림을 저장하고 제공하는 것이다. 이메일·문자 전송은 이후 확장 대상으로 둔다. 초기 알림 실패 관리는 이벤트 처리와 알림 저장 실패의 확인·재시도를 의미한다.
+우선 완성할 사용자 흐름은 다음과 같다.
 
-## 서비스 구성도
-
-```mermaid
-flowchart TD
-    CLIENT["사용자 · 관리자"]
-
-    subgraph PRODUCT["상품 서비스"]
-        PAPI["상품 API · Deployment + Service"]
-        PDB[("상품 DB · MariaDB")]
-        REDIS[("Redis · 상품 상세 캐시")]
-
-        PAPI -->|"상품 등록·수정·조회"| PDB
-        PAPI -->|"캐시 조회·저장·삭제"| REDIS
-    end
-
-    subgraph ORDER["주문 서비스"]
-        OAPI["주문 API · Deployment + Service"]
-        ORESULT["주문 결과 처리 · Deployment"]
-        OPUBLISH["주문 이벤트 발행 · Deployment"]
-        ODB[("주문 DB · 주문·처리 기록·Outbox")]
-
-        OAPI -->|"주문·취소 접수 및 조회"| ODB
-        ORESULT -->|"주문 상태·처리 기록·Outbox 저장"| ODB
-        ODB -->|"발행 대기 Outbox 조회"| OPUBLISH
-        OPUBLISH -->|"발행 완료·재시도 기록"| ODB
-    end
-
-    subgraph INVENTORY["재고 서비스"]
-        IAPI["재고 API · Deployment + Service"]
-        IWORKER["재고 이벤트 처리 · Deployment"]
-        IPUBLISH["재고 결과 발행 · Deployment"]
-        IDB[("재고 DB · 수량·예약·처리 기록·Outbox")]
-
-        IAPI -->|"입고 등록·재고 조회"| IDB
-        IWORKER -->|"예약·해제·처리 기록·Outbox 저장"| IDB
-        IDB -->|"발행 대기 Outbox 조회"| IPUBLISH
-        IPUBLISH -->|"발행 완료·재시도 기록"| IDB
-    end
-
-    subgraph NOTIFICATION["알림 서비스"]
-        NAPI["알림 API · Deployment + Service"]
-        NWORKER["알림 이벤트 처리 · Deployment"]
-        NDB[("알림 DB · 알림·처리 기록")]
-
-        NAPI -->|"알림 조회·읽음 처리"| NDB
-        NWORKER -->|"알림·처리 기록 저장"| NDB
-    end
-
-    subgraph KAFKA["Kafka · 메시지 흐름별 토픽"]
-        REQUEST["재고 확보·반환 요청"]
-        RESULT["재고 확보·반환 결과"]
-        FINAL["주문 확정·실패·취소 완료"]
-    end
-
-    CLIENT -->|"상품 조회·관리"| PAPI
-    CLIENT -->|"주문 접수·조회·취소"| OAPI
-    CLIENT -->|"재고 관리"| IAPI
-    CLIENT -->|"알림 조회·읽음 처리"| NAPI
-
-    OAPI -->|"HTTP · 원본 가격·판매 상태 확인"| PAPI
-
-    OPUBLISH -->|"요청 발행"| REQUEST
-    REQUEST -->|"요청 소비"| IWORKER
-
-    IPUBLISH -->|"결과 발행"| RESULT
-    RESULT -->|"결과 소비"| ORESULT
-
-    OPUBLISH -->|"최종 결과 발행"| FINAL
-    FINAL -->|"최종 결과 소비"| NWORKER
+```text
+주문 접수 → 재고 확보 요청 → 재고 확보 결과 → 주문 상태 변경
 ```
 
+먼저 주문·재고 서비스 사이의 최소 흐름을 로컬에서 검증한다. 취소, 알림, 관리자 기능, Kubernetes 배포와 운영 기능은 이후 단계로 둔다.
+
+첫 구현은 FastAPI 기반 HTTP API와 각 서비스별 SQLite 저장소를 사용한다. SQLite는 로컬 흐름을 빠르게 검증하기 위한 선택이며, Kafka와 운영 배포는 이후 단계다.
+
+## 디렉터리
+
+```text
+.
+├── services/
+│   ├── order/       # 주문 접수와 재고 결과에 따른 주문 상태 변경
+│   └── inventory/   # 재고 확보 요청 처리와 결과 생성
+├── docs/
+│   └── flows/       # 사용자·메시지 처리 흐름
+└── deploy/           # 로컬 실행 구성이 필요해질 때 생성 (현재 없음)
+```
+
+주문 API와 재고 API를 별도 프로세스로 실행한다. 주문 서비스는 재고 서비스 응답을 받은 뒤 주문 상태를 확정하거나 거절한다. 재고 서비스 연결이 실패하면 실제 재고 상태를 알 수 없으므로 주문을 `pending`으로 남긴다.
+
+## 로컬 실행
+
+프로젝트 루트에서 개발 의존성을 설치한다.
+
+```powershell
+python -m pip install -r requirements-dev.txt
+```
+
+터미널 1에서 재고 서비스를 실행한다.
+
+```powershell
+python -m uvicorn inventory_service.main:app --app-dir services/inventory/src --port 8001
+```
+
+터미널 2에서 주문 서비스를 실행한다.
+
+```powershell
+python -m uvicorn order_service.main:app --app-dir services/order/src --port 8000
+```
+
+재고를 추가한 다음 주문을 접수한다.
+
+```powershell
+curl.exe -X POST http://127.0.0.1:8001/api/v1/inventory/widget/stock -H "Content-Type: application/json" -d '{"quantity":5}'
+curl.exe -X POST http://127.0.0.1:8000/api/v1/orders -H "Content-Type: application/json" -d '{"product_id":"widget","quantity":2}'
+```
+
+테스트는 `python -m pytest`로 실행한다.
+
+## 문서
+
+- [서비스 디렉터리 안내](services/README.md)
+- [주문 처리 흐름](docs/flows/order.md)
+
+## 구현 원칙
+
+- 먼저 주문에서 재고 결과 반영까지 하나의 흐름을 끝까지 동작시킨다.
+- 첫 흐름에 필요하지 않은 서비스·실행 프로세스·배포 파일은 미리 만들지 않는다.
+- 동작하는 흐름마다 테스트를 추가하고, 그다음 실패 처리·중복 처리·재시도·취소를 단계적으로 확장한다.
+- 새 서비스나 공통 코드는 실제 요구가 생길 때 추가한다.

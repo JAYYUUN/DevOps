@@ -1,0 +1,3 @@
+-r services/order/requirements.txt
+-r services/inventory/requirements.txt
+pytest>=8.0,<9.0
